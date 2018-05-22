@@ -1,4 +1,4 @@
-DEFAULTTUNE = "mips32r5el"
+DEFAULTTUNE = "p5600el"
 
 # Baikal-T(1) is based on MIPS Warrior P-class P5600 core
 require conf/machine/include/tune-p5600.inc
