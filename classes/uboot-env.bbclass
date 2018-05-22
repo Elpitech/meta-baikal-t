@@ -546,7 +546,7 @@ uboot_env_assemble() {
 do_assemble_uboot_env() {
 	uboot_env_assemble "${WORKDIR}/u-boot-env.txt" "${WORKDIR}/u-boot-env.bin"
 }
-addtask assemble_uboot_env after do_compile before do_install
+addtask assemble_uboot_env after do_compile before do_install do_deploy
 
 do_install[vardepsexclude] += "DATETIME"
 do_install_append () {
