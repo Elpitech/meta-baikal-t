@@ -26,8 +26,8 @@ do_install () {
 	install -m 755 ${B}/tools/env/fw_printenv ${D}${base_sbindir}/fw_printenv
 	ln -sv ${base_sbindir}/fw_printenv ${D}${base_sbindir}/fw_setenv
 	install -m 0644 ${S}/tools/env/fw_env.config ${D}${sysconfdir}/fw_env.config
-	if [ -n "${UBOOT_ENV_MTD_FILE}" ]; then
-		echo -e "${UBOOT_ENV_MTD_FILE}\t0x00000000\t${UBOOT_ENV_SIZE}\t0x1000" > ${D}${sysconfdir}/fw_env.config
+	if [ -n "${RECOVERY_MTD_UBOOT_ENV}" ]; then
+		echo -e "${RECOVERY_MTD_UBOOT_ENV}\t0x00000000\t${UBOOT_ENV_SIZE}\t0x1000" > ${D}${sysconfdir}/fw_env.config
 	fi
 }
 
