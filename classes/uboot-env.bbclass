@@ -71,6 +71,11 @@ UBOOT_ENV_FITIMAGE_ADDR_FW ??= "0x9C100000"
 UBOOT_ENV_ETHADDR ??= "7a:72:6c:4a:7a:ee"
 UBOOT_ENV_ETH1ADDR ??= "7a:72:6c:4a:7b:ee"
 UBOOT_ENV_ETH2ADDR ??= "7a:72:6c:4a:7c:ee"
+UBOOT_ENV_MTDID ??= "boot_flash"
+UBOOT_ENV_MTDPARTS ??= "bootloader;0x0;0x000E0000;ro;; \
+			environment;0x000E0000;0x00010000;; \
+			information;0x000F0000;0x00010000;ro;; \
+			fitimage;0x00100000;0x00F00000"
 UBOOT_ENV_BOOTCMD ??= "bootmenu"
 UBOOT_ENV_BOOTDELAY ??= "10"
 UBOOT_ENV_BOOTMENU ??= "rec_ram=1. Boot recovery kernel and RFS;rom=/dev/ram;; \
@@ -139,6 +144,46 @@ ethaddr=${UBOOT_ENV_ETHADDR}
 eth1addr=${UBOOT_ENV_ETH1ADDR}
 eth2addr=${UBOOT_ENV_ETH2ADDR}
 sataphy=100
+EOF
+}
+
+#
+# Emit the mtdids/mtdparts env variables
+#
+# $1 ... .env filename
+uboot_env_emit_mtd_vars() {
+	# UBOOT_ENV_MTDPARTS consists of mtd partitions separated by the double semicolon
+	# patterns. We'll walk over all the items collecting the mtdparts variable.
+	parts=$(echo "${UBOOT_ENV_MTDPARTS}" | sed 's/^\s*//g;s/\s*$//g')
+	delim=","
+	while [ -n "$parts" ]; do
+		# Extract leading partitem and discard it from the bootmenu handling the
+		# last case when ;; delimiter is absent
+		partitem=$(echo "${parts%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
+		parts=$(echo "${parts#*;;}" | sed 's/^\s*//g;s/\s*$//g')
+		[ "${partitem}" == "${parts}" ] && parts="" && delim=""
+
+		# Detach name;offset;size[;ro] sections simultaniously checking whether
+		# the mandatory sections aren't empty
+		partname=$(echo "$partitem" | cut -d";" -f1 -s)
+		partoff=$(echo "$partitem" | cut -d";" -f2 -s)
+		partsize=$(echo "$partitem" | cut -d";" -f3 -s)
+		if [ -z "${partname}" -o -z "${partoff}" -o -z "${partsize}"]; then
+			echo "MTD item name/offset/size is inconsistent ($partitem)"
+			continue
+		fi
+		partro=$(echo "$partitem" | cut -d";" -f4 -s)
+
+		# Collect mtdparts environment variable
+		partsize=$(expr $(printf "%d" ${partsize}) / 1024)
+		mtdparts="${mtdparts}${partsize}k@${partoff}(${partname})${partro}${delim}"
+	done
+
+	# Dump the mtdparts variable out to the env-file
+	cat << EOF >> ${1}
+partition=nor0,1
+mtdids=nor0=${UBOOT_ENV_MTDID}
+mtdparts=mtdparts=${UBOOT_ENV_MTDID}:${mtdparts}
 EOF
 }
 
@@ -513,31 +558,34 @@ uboot_env_assemble() {
 	bbdebug 2 "Creating U-boot environment image"
 
 	# Create an empty file for environment variables declarations
-	touch ${1} && > ${1}
+	touch ${1} && > "${1}"
 
 	# Create the image build information first in the file
-	uboot_env_emit_build_info ${1}
+	uboot_env_emit_build_info "${1}"
 
 	# Create the board default information
-	uboot_env_emit_board_params ${1}
+	uboot_env_emit_board_params "${1}"
 
 	# Set SoC performance basic configuration
-	uboot_env_emit_soc_params ${1}
+	uboot_env_emit_soc_params "${1}"
 
 	# Set serial console parameters
-	uboot_env_emit_serial_params ${1}
+	uboot_env_emit_serial_params "${1}"
 
 	# Set basic peripheral interfaces parameters
-	uboot_env_emit_dev_params ${1}
+	uboot_env_emit_dev_params "${1}"
+
+	# Set mtd-utility parameters
+	uboot_env_emit_mtd_vars "${1}"
 
 	# Write boot files and addresses settings
-	uboot_env_emit_boot_files ${1}
+	uboot_env_emit_boot_files "${1}"
 
 	# Create variables with common kernel boot arguments
-	uboot_env_emit_boot_args ${1}
+	uboot_env_emit_boot_args "${1}"
 
 	# Emit kernel boot menu and commands
-	uboot_env_emit_boot_cmd ${1}
+	uboot_env_emit_boot_cmd "${1}"
 
 	# Create U-boot environment binary
 	uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o ${2} ${1}
