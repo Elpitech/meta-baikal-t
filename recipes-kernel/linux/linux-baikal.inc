@@ -13,7 +13,7 @@ inherit kernel
 
 DEPENDS += "xz-native"
 
-SRC_URI ?= "git://192.168.1.253/IT/T-Platforms/BaikalSDK/kernel.git;protocol=ssh;user=git;branch=${KBRANCH}"
+SRC_URI ?= "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;branch=${KBRANCH}"
 SRCREV ?= "${AUTOREV}"
 S = "${WORKDIR}/git"
 
@@ -54,9 +54,29 @@ MODULE_TARBALL_BASE_NAME[vardepsexclude] += "DATETIME"
 # Override the fitImage an DTB installation appended methods. We don't really need so
 # many files and links deployed. We'll create only unique and necessary minimum ones.
 do_deploy_append() {
-    # Remove main kernel image symlink. It's too specific
+    # Remove kernel image symlinks and replace non-fitImages with proper one
     for type in ${KERNEL_IMAGETYPES} ; do
+
+        bbdebug 2 "Discard messy ${type} symbolic links..."
         rm -f ${DEPLOYDIR}/${type}
+        rm -f ${DEPLOYDIR}/${type}-${KERNEL_IMAGE_SYMLINK_NAME}.bin
+
+        if [ ${type} == "fitImage" ]; then
+            continue
+        fi
+
+        # Extract extention and type of the image
+        ext=${type##*.}
+        typeextless=${type%.*}
+        if [ ${ext} != ${type} ]; then
+            ext=".${ext}"
+        else
+            ext=""
+        fi
+
+        bbdebug 2 "Copying ${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext} source files..."
+        mv ${DEPLOYDIR}/${type}-${KERNEL_IMAGE_BASE_NAME}.bin ${DEPLOYDIR}/${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext}
+        ln -sf ${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext} ${DEPLOYDIR}/${typeextless}-${KERNEL_IMAGE_SYMLINK_NAME}${ext}
     done
 
     # Fix deployed fitImage files and symbolic links
@@ -110,7 +130,11 @@ do_deploy_append() {
 
         bbdebug 2 "Copying ${DTB_BASE_NAME}.${DTB_EXT} files"
         install -m 0644 ${DTB_PATH} ${DEPLOYDIR}/${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT}
-        ln -sf ${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT} ${DEPLOYDIR}/${DTB_BASE_NAME}-${DTB_IMAGE_SYMLINK_NAME}.${DTB_EXT}
+        if ! echo ${DTB_BASE_NAME} | grep -q ${DTB_IMAGE_SYMLINK_NAME}; then
+            ln -sf ${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT} ${DEPLOYDIR}/${DTB_BASE_NAME}-${DTB_IMAGE_SYMLINK_NAME}.${DTB_EXT}
+        else
+            ln -sf ${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT} ${DEPLOYDIR}/${DTB_BASE_NAME}.${DTB_EXT}
+        fi
     done
 }
 
