@@ -28,9 +28,13 @@
 # ${UBOOT_ENV_INITRD_ADDR_LD} - initramfs address to load (can be zero)
 # ${UBOOT_ENV_FDT_ADDR_LD} - fdt binary name to load (can be zero)
 # ${UBOOT_ENV_FITIMAGE_ADDR_FW} - base address of the fitImage within the SoC address space
+# ${UBOOT_ENV_FITIMAGE_CONFIG} - Config of Fit-image to boot (if empty default option from fit-image itself used)
+# ${UBOOT_ENV_FITIMAGE_VERIFY} - verify sha/crc/etc of items loaded from FIT
 # ${UBOOT_ENV_ETHADDR} - ethernet address of the first interface
 # ${UBOOT_ENV_ETH1ADDR} - ethernet address of the second interface
 # ${UBOOT_ENV_ETH2ADDR - ethernet address of the third interface}
+# ${UBOOT_ENV_MTDID} - flash-device name to assign the partitions listed in mtdparts
+# ${UBOOT_ENV_MTDPARTS} - list of mtd partitions available on SPI-boot flash
 # ${UBOOT_ENV_BOOTCMD} - default kernel boot command
 # ${UBOOT_ENV_BOOTDELAY} - kernel boot delay
 # ${UBOOT_ENV_BOOTMENU} - menu settings in the format "unique_id=<Menu Text>;interface=</dev/rootdev>;<params>;;"
@@ -61,13 +65,17 @@ UBOOT_ENV_BAUDRATE ??= "115200"
 UBOOT_ENV_NUM_CORES ??= "2"
 UBOOT_ENV_CPUFREQ ??= "900"
 UBOOT_ENV_HOSTNAME ??= "baikal"
-UBOOT_ENV_KERNEL_FILE_NAME ??= "vmlinux.gz"
+UBOOT_ENV_VMLINUZ_FILE_NAME ??= "vmlinuz.bin"
+UBOOT_ENV_VMLINUX_FILE_NAME ??= "vmlinux.bin"
 UBOOT_ENV_INITRD_FILE_NAME ??= "initramfs.gz"
 UBOOT_ENV_FDT_FILE_NAME ??= "machine.dtb"
-UBOOT_ENV_KERNEL_ADDR_LD ??= "${UBOOT_LOADADDRESS}"
-UBOOT_ENV_INITRD_ADDR_LD ??= "0x86100000"
+UBOOT_ENV_VMLINUZ_ADDR_LD ??= "0x86100000"
+UBOOT_ENV_VMLINUX_ADDR_LD ??= "0x80100000"
+UBOOT_ENV_INITRD_ADDR_LD ??= "0x87000000"
 UBOOT_ENV_FDT_ADDR_LD ??= "0x86000000"
 UBOOT_ENV_FITIMAGE_ADDR_FW ??= "0x9C100000"
+UBOOT_ENV_FITIMAGE_CONFIG ??= ""
+UBOOT_ENV_FITIMAGE_VERIFY ??= "y"
 UBOOT_ENV_ETHADDR ??= "7a:72:6c:4a:7a:ee"
 UBOOT_ENV_ETH1ADDR ??= "7a:72:6c:4a:7b:ee"
 UBOOT_ENV_ETH2ADDR ??= "7a:72:6c:4a:7c:ee"
@@ -75,7 +83,8 @@ UBOOT_ENV_MTDID ??= "boot_flash"
 UBOOT_ENV_MTDPARTS ??= "bootloader;0x0;0x000E0000;ro;; \
 			environment;0x000E0000;0x00010000;; \
 			information;0x000F0000;0x00010000;ro;; \
-			fitimage;0x00100000;0x00F00000"
+			fitimage;0x00100000;0x00F00000;ro;; \
+			firmware;0x0;0x01000000"
 UBOOT_ENV_BOOTCMD ??= "bootmenu"
 UBOOT_ENV_BOOTDELAY ??= "10"
 UBOOT_ENV_BOOTMENU ??= "rec_ram=1. Boot recovery kernel and RFS;rom=/dev/ram;; \
@@ -93,16 +102,6 @@ build_image=${UBOOT_ENV_BUILD_IMAGE}
 build_version=${UBOOT_ENV_BUILD_VERSION}
 build_date=${DATE}
 build_target=${MACHINE}
-EOF
-}
-
-#
-# Emit the board boot config parameters
-#
-# $1 ... .env filename
-uboot_env_emit_board_params() {
-	cat << EOF >> ${1}
-board_conf=1
 EOF
 }
 
@@ -193,17 +192,24 @@ EOF
 # $1 ... .env filename
 uboot_env_emit_boot_files() {
 	cat << EOF >> ${1}
-kernel_addr_ld=${UBOOT_ENV_KERNEL_ADDR_LD}
-kernel_file_name=${UBOOT_ENV_KERNEL_FILE_NAME}
+vmlinuz_addr_ld=${UBOOT_ENV_VMLINUZ_ADDR_LD}
+vmlinuz_file_name=${UBOOT_ENV_VMLINUZ_FILE_NAME}
+vmlinux_addr_ld=${UBOOT_ENV_VMLINUX_ADDR_LD}
+vmlinux_file_name=${UBOOT_ENV_VMLINUX_FILE_NAME}
+kernel_addr_ld=\${vmlinuz_addr_ld}
+kernel_file_name=\${vmlinuz_file_name}
+fdt_addr_ld=${UBOOT_ENV_FDT_ADDR_LD}
+fdt_file_name=${UBOOT_ENV_FDT_FILE_NAME}
+fdt_high=no
+fdt_len=0x00040000
 initrd_addr_ld=${UBOOT_ENV_INITRD_ADDR_LD}
 initrd_file_name=${UBOOT_ENV_INITRD_FILE_NAME}
 initrd_high=no
 initrd_start=\${initrd_addr_ld}
 initrd_len=0x01000000
-fdt_addr_ld=${UBOOT_ENV_FDT_ADDR_LD}
-fdt_file_name=${UBOOT_ENV_FDT_FILE_NAME}
-fdt_high=no
 multi_addr_fw=${UBOOT_ENV_FITIMAGE_ADDR_FW}
+multi_conf=${@'#conf@${UBOOT_ENV_FITIMAGE_CONFIG}'.replace('/', '_') if '${UBOOT_ENV_FITIMAGE_CONFIG}' else ''}
+verify=${UBOOT_ENV_FITIMAGE_VERIFY}
 EOF
 }
 
@@ -222,7 +228,7 @@ addkdb=setenv bootargs \${bootargs} kgdboc=\${console}
 addboard=setenv bootargs \${bootargs} board_name=\${board_name} board_serial=\${board_serial} board_rev=\${board_rev}
 collect_args=run addroot addtty addhw addmisc addfb addkdb addboard
 start_static=bootnr \${kernel_addr_ld} \${initrd_addr_ld} \${fdt_addr_ld}
-start_multi=bootm \${multi_addr_fw}#conf@\${board_conf}
+start_multi=bootm \${multi_addr_fw}\${multi_conf}
 EOF
 }
 
@@ -328,7 +334,7 @@ uboot_env_emit_dev_cmd() {
 init_${2}=${init_exec}; sleep 1;
 load_kernel_${2}=echo Loading kernel: ${dir}/\${kernel_file_name}; ${fsop} ${3} ${part} \${kernel_addr_ld} ${dir}/\${kernel_file_name}
 load_initrd_${2}=echo Loading ramdisk: ${dir}/\${initrd_file_name}; ${fsop} ${3} ${part} \${initrd_addr_ld} ${dir}/\${initrd_file_name}; setenv initrd_len \${filesize}
-load_fdt_${2}=echo Loading FDT: ${dir}/\${fdt_file_name}; ${fsop} ${3} ${part} \${fdt_addr_ld} ${dir}/\${fdt_file_name}; fdt addr \${fdt_addr_ld}
+load_fdt_${2}=echo Loading FDT: ${dir}/\${fdt_file_name}; ${fsop} ${3} ${part} \${fdt_addr_ld} ${dir}/\${fdt_file_name}; setenv fdt_len \${filesize}; fdt addr \${fdt_addr_ld}
 fini_${2}=${fini_exec}; sleep 1;
 setroot_${2}=setenv root_dev ${4}
 boot_${2}=run init_${2} load_kernel_${2} load_initrd_${2} load_fdt_${2} fini_${2} setroot_${2} collect_args start_static
@@ -472,7 +478,7 @@ EOF
 	cat << EOF >> ${1}
 load_kernel_${2}=echo Loading kernel: ${dir}\${kernel_file_name}; ${3} \${kernel_addr_ld} ${dir}\${kernel_file_name}
 load_initrd_${2}=echo Loading ramdisk: ${dir}\${initrd_file_name}; ${3} \${initrd_addr_ld} ${dir}\${initrd_file_name}; setenv initrd_len \${filesize}
-load_fdt_${2}=echo Loading FDT: ${dir}\${fdt_file_name}; ${3} \${fdt_addr_ld} ${dir}\${fdt_file_name}; fdt addr \${fdt_addr_ld}
+load_fdt_${2}=echo Loading FDT: ${dir}\${fdt_file_name}; ${3} \${fdt_addr_ld} ${dir}\${fdt_file_name}; setenv fdt_len \${filesize}; fdt addr \${fdt_addr_ld}
 setroot_${2}=setenv root_dev ${4}
 boot_${2}=run init_${2} load_kernel_${2} load_initrd_${2} load_fdt_${2} setroot_${2} collect_args start_static
 EOF
@@ -562,9 +568,6 @@ uboot_env_assemble() {
 
 	# Create the image build information first in the file
 	uboot_env_emit_build_info "${1}"
-
-	# Create the board default information
-	uboot_env_emit_board_params "${1}"
 
 	# Set SoC performance basic configuration
 	uboot_env_emit_soc_params "${1}"
