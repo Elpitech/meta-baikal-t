@@ -225,8 +225,7 @@ addhw=setenv bootargs \${bootargs} nohtw stmmaceth=chain_mode:1
 addmisc=setenv bootargs \${bootargs} earlyprintk=uart8250,mmio32,0x1F04A000,\${baudrate} maxcpus=\${num_cores}
 addfb=setenv bootargs \${bootargs} video=sma750fb:1600x900-16@60
 addkdb=setenv bootargs \${bootargs} kgdboc=\${console}
-addboard=setenv bootargs \${bootargs} board_name=\${board_name} board_serial=\${board_serial} board_rev=\${board_rev}
-collect_args=run addroot addtty addhw addmisc addfb addkdb addboard
+collect_args=run addroot addtty addhw addmisc addfb addkdb
 start_static=bootnr \${kernel_addr_ld} \${initrd_addr_ld} \${fdt_addr_ld}
 start_multi=bootm \${multi_addr_fw}\${multi_conf}
 EOF
