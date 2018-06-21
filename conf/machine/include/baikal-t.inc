@@ -16,15 +16,17 @@ PREFERRED_PROVIDER_virtual/kernel ?= "linux-baikal"
 
 # Default u-boot code parameters
 PREFERRED_PROVIDER_virtual/bootloader ?= "u-boot-baikal"
-UBOOT_LOADADDRESS ??= "0x80100000"
-UBOOT_ENTRYSYMBOL ??= "kernel_entry"
-
-# Set Baikal U-boot and it mk(env)image tools provider
 PREFERRED_PROVIDER_u-boot ?= "u-boot-baikal"
 PREFERRED_PROVIDER_u-boot-mkimage ?= "u-boot-baikal-mk-tools"
 PREFERRED_PROVIDER_u-boot-mkimage-native ?= "u-boot-baikal-mk-tools-native"
 PREFERRED_PROVIDER_u-boot-mkimage-nativesdk ?= "u-boot-baikal-mk-tools-nativesdk"
 PREFERRED_PROVIDER_u-boot-fw-utils ?= "u-boot-baikal-fw-utils"
+UBOOT_LOADADDRESS ??= "${UBOOT_VMLINUX_LOADADDRESS}"
+UBOOT_ENTRYSYMBOL ??= "kernel_entry"
+UBOOT_VMLINUZ_LOADADDRESS ??= "0x86100000"
+UBOOT_VMLINUX_LOADADDRESS ??= "0x80100000"
+UBOOT_FDT_LOADADDRESS ??= "0x86000000"
+UBOOT_RD_LOADADDRESS ??= "0x87000000"
 
 # Set default kernel/bootloader output binary names and symlinks
 KERNEL_IMAGE_BASE_NAME ?= "${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
