@@ -8,8 +8,7 @@ require conf/machine/include/soc-family.inc
 
 # Each Baikal-T is equipped with serial, pci and usb controllers
 MACHINE_FEATURES = "serial pci usbhost"
-SERIAL_CONSOLE = "115200;ttyS0"
-SERIAL_CONSOLES = "115200;ttyS0 115200;ttyS1"
+SERIAL_CONSOLE = "115200 ttyS0"
 
 # Default kernel code parameters
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-baikal"
