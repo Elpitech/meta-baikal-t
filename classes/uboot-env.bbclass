@@ -37,8 +37,8 @@
 # ${UBOOT_ENV_MTDPARTS} - list of mtd partitions available on SPI-boot flash
 # ${UBOOT_ENV_BOOTCMD} - default kernel boot command
 # ${UBOOT_ENV_BOOTDELAY} - kernel boot delay
-# ${UBOOT_ENV_BOOTMENU} - menu settings in the format "unique_id=<Menu Text>;interface=</dev/rootdev>;<params>;;"
-# While rootdevice can be any supported by the kernel (like /dev/sda, /dev/ram, etc), following interfaces
+# ${UBOOT_ENV_BOOTMENU} - menu settings in the format "unique_id=<Menu Text>;interface=<rootdev>;<params>;;"
+# While rootdevice can be any supported by the kernel (like /dev/sda, /dev/ramX, initfs, etc), following interfaces
 # are supported by this option:
 # - rom - boot kernel from SPI-flash recovery image. The kernel will be extracted from fitImage
 #         and supplied with dtb/initramfs from there
@@ -87,7 +87,7 @@ UBOOT_ENV_MTDPARTS ??= "bootloader;0x0;0x000E0000;ro;; \
 			firmware;0x0;0x01000000"
 UBOOT_ENV_BOOTCMD ??= "bootmenu"
 UBOOT_ENV_BOOTDELAY ??= "10"
-UBOOT_ENV_BOOTMENU ??= "rec_ram=1. Boot recovery kernel and RFS;rom=/dev/ram;; \
+UBOOT_ENV_BOOTMENU ??= "rec_ram=1. Boot recovery kernel and RFS;rom=initfs;; \
 			rec_sda1=2. Boot recovery kernel to /dev/sda1;rom=/dev/sda1;; \
 			rec_sdb1=3. Boot recovery kernel to /dev/sdb1;rom=/dev/sdb1;; \
 			reset=Reset board;reset"
@@ -196,8 +196,8 @@ vmlinuz_addr_ld=${UBOOT_ENV_VMLINUZ_ADDR_LD}
 vmlinuz_file_name=${UBOOT_ENV_VMLINUZ_FILE_NAME}
 vmlinux_addr_ld=${UBOOT_ENV_VMLINUX_ADDR_LD}
 vmlinux_file_name=${UBOOT_ENV_VMLINUX_FILE_NAME}
-kernel_addr_ld=\${vmlinuz_addr_ld}
-kernel_file_name=\${vmlinuz_file_name}
+kernel_addr_ld=${UBOOT_ENV_VMLINUZ_ADDR_LD}
+kernel_file_name=${UBOOT_ENV_VMLINUZ_FILE_NAME}
 fdt_addr_ld=${UBOOT_ENV_FDT_ADDR_LD}
 fdt_file_name=${UBOOT_ENV_FDT_FILE_NAME}
 fdt_high=no
@@ -205,11 +205,13 @@ fdt_len=0x00040000
 initrd_addr_ld=${UBOOT_ENV_INITRD_ADDR_LD}
 initrd_file_name=${UBOOT_ENV_INITRD_FILE_NAME}
 initrd_high=no
-initrd_start=\${initrd_addr_ld}
+initrd_start=${UBOOT_ENV_INITRD_ADDR_LD}
 initrd_len=0x01000000
 multi_addr_fw=${UBOOT_ENV_FITIMAGE_ADDR_FW}
 multi_conf=${@'#conf@${UBOOT_ENV_FITIMAGE_CONFIG}'.replace('/', '_') if '${UBOOT_ENV_FITIMAGE_CONFIG}' else ''}
 verify=${UBOOT_ENV_FITIMAGE_VERIFY}
+select_vmlinuz=echo Select vmlinuz.bin; setenv kernel_addr_ld \${vmlinuz_addr_ld}; setenv kernel_file_name \${vmlinuz_file_name}; setenv initrd_start \${initrd_addr_ld}
+select_vmlinux=echo Select vmlinux.bin; setenv kernel_addr_ld \${vmlinux_addr_ld}; setenv kernel_file_name \${vmlinux_file_name}; setenv initrd_start \${initrd_addr_ld}
 EOF
 }
 
@@ -240,7 +242,9 @@ EOF
 uboot_env_emit_rom_cmd() {
 
 	# Make sure the root device is valid
-	if [ "$(echo ${3} | cut -c1-5)" != "/dev/" ]; then
+	devp=$(echo ${3} | cut -c1-5)
+        devi=$(echo ${3} | cut -c1-6)
+	if [ "${devp}" != "/dev/" && "${devi}" != "initfs"]; then
 		bberror "Invalid kernel root device ${3} in menu item ${2}"
 		return 1
 	fi
@@ -268,7 +272,9 @@ uboot_env_emit_dev_cmd() {
 	local fini_exec
 
 	# Make sure the root device is valid
-	if [ "$(echo ${4} | cut -c1-5)" != "/dev/" ]; then
+	devp=$(echo ${4} | cut -c1-5)
+        devi=$(echo ${4} | cut -c1-6)
+	if [ "${devp}" != "/dev/" && "${devi}" != "initfs"]; then
 		bberror "Invalid kernel root device ${4} in menu item ${2}"
 		return 1
 	fi
@@ -336,7 +342,7 @@ load_initrd_${2}=echo Loading ramdisk: ${dir}/\${initrd_file_name}; ${fsop} ${3}
 load_fdt_${2}=echo Loading FDT: ${dir}/\${fdt_file_name}; ${fsop} ${3} ${part} \${fdt_addr_ld} ${dir}/\${fdt_file_name}; setenv fdt_len \${filesize}; fdt addr \${fdt_addr_ld}
 fini_${2}=${fini_exec}; sleep 1;
 setroot_${2}=setenv root_dev ${4}
-boot_${2}=run init_${2} load_kernel_${2} load_initrd_${2} load_fdt_${2} fini_${2} setroot_${2} collect_args start_static
+boot_${2}=run init_${2} select_vmlinuz load_kernel_${2} load_initrd_${2} load_fdt_${2} fini_${2} setroot_${2} collect_args start_static
 EOF
 }
 
@@ -376,7 +382,9 @@ uboot_env_emit_net_cmd() {
 	local dir
 
 	# Make sure the root device is valid
-	if [ "$(echo ${4} | cut -c1-5)" != "/dev/" ]; then
+	devp=$(echo ${4} | cut -c1-5)
+        devi=$(echo ${4} | cut -c1-6)
+	if [ "${devp}" != "/dev/" && "${devi}" != "initfs"]; then
 		bberror "Invalid kernel root device ${4} in menu item ${2}"
 		return 1
 	fi
@@ -479,7 +487,7 @@ load_kernel_${2}=echo Loading kernel: ${dir}\${kernel_file_name}; ${3} \${kernel
 load_initrd_${2}=echo Loading ramdisk: ${dir}\${initrd_file_name}; ${3} \${initrd_addr_ld} ${dir}\${initrd_file_name}; setenv initrd_len \${filesize}
 load_fdt_${2}=echo Loading FDT: ${dir}\${fdt_file_name}; ${3} \${fdt_addr_ld} ${dir}\${fdt_file_name}; setenv fdt_len \${filesize}; fdt addr \${fdt_addr_ld}
 setroot_${2}=setenv root_dev ${4}
-boot_${2}=run init_${2} load_kernel_${2} load_initrd_${2} load_fdt_${2} setroot_${2} collect_args start_static
+boot_${2}=run init_${2} select_vmlinuz load_kernel_${2} load_initrd_${2} load_fdt_${2} setroot_${2} collect_args start_static
 EOF
 }
 
