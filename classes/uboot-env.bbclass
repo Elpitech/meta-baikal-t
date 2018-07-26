@@ -351,9 +351,8 @@ EOF
 #
 # $1 ... ip address
 uboot_env_validate_ips() {
-	if [ -n "$(echo $ip | cut -d'.' -f5-)" ]; then
-		return 1
-	fi
+	local cntr=1
+
 	for byte in $(echo ${ip} | tr '.' '\n'); do
 		case ${byte} in
 		[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
@@ -361,7 +360,15 @@ uboot_env_validate_ips() {
 		*)
 			return 1
 		esac
+
+		cntr=$(expr $cntr + 1)
 	done
+
+	if [ "$cntr" -ne "4" ]; then
+		return 1
+	fi
+
+	return 0
 }
 
 #
@@ -428,14 +435,13 @@ uboot_env_emit_net_cmd() {
 		bberror "ip is mandatory for network iface in menu item ${2}"
 		return 1
 	fi
+	if [ -z "${serverip}" ]; then
+		bberror "srvip is mandatory for network iface in boot item ${2}"
+		return 1
+	fi
 
 	# Parse IP arguments if if they are static
 	if [ "${ipaddr}" != "dhcp" ]; then
-		if [ -z "${serverip}" ]; then
-			bberror "srvip is mandatory if ip is static in menu item ${2}"
-			return 1
-		fi
-
 		# Set ip default values if ones omitted
 		if [ -z "${gatewayip}" ]; then
 			gatewayip=${serverip}
@@ -460,6 +466,9 @@ uboot_env_emit_net_cmd() {
 				return 1
 			fi
 		done
+	elif ! uboot_env_validate_ips ${serverip}; then
+		bberror "Invalid IP address $serverip in boot item ${2}"
+		return 1
 	fi
 
 	# Parse the root directory value if nfs interface is requested
@@ -472,10 +481,15 @@ uboot_env_emit_net_cmd() {
 	fi
 
 	# Set dhcp or static IPs at the interface init procedure
-	if [ "$ipaddr" == "dhcp" ]; then
+	if [ "$ipaddr" == "dhcp" && -z "${serverip}" ]; then
 		cat << EOF >> ${1}
 init_${2}=dhcp
 EOF
+	else if [ "$ipaddr" == "dhcp" && ! -z "${serverip}" ]; then
+		cat << EOF >> ${1}
+init_${2}=dhcp; setenv serverip ${serverip};
+EOF
+	else
 	else
 		cat << EOF >> ${1}
 init_${2}=setenv ipaddr ${ipaddr}; setenv serverip ${serverip}; setenv gatewayip ${gatewayip}; setenv netmask ${netmask}; setenv dnsip ${dnsip}; setenv dnsip2 ${dnsip2}
