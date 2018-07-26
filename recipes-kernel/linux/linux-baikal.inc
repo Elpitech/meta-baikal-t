@@ -19,7 +19,8 @@ S = "${WORKDIR}/git"
 
 # It must be ${PV} branch by default. The specific revision shall be extracted from
 # the sources by kernel.bbclass, so shut the version sanity check up
-KBRANCH ?= "linux-${PV}.y-tp"
+KERNEL_REALTIME ?= "0"
+KBRANCH ?= "linux-${@'rt-' if '${KERNEL_REALTIME}' == '1' else ''}${PV}.y-tp"
 LINUX_VERSION ?= "${PV}"
 KERNEL_VERSION_SANITY_SKIP = "1"
 
@@ -50,6 +51,14 @@ DTB_IMAGE_BASE_NAME ??= "${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 DTB_IMAGE_SYMLINK_NAME ??= "${MACHINE}"
 DTB_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
 MODULE_TARBALL_BASE_NAME[vardepsexclude] += "DATETIME"
+
+# Modify kernel config if real-time option is selected
+do_configure_append() {
+    if [ "${KERNEL_REALTIME}" == "1" ]; then
+        sed -ie "s/^# CONFIG_PREEMPT_RT_FULL is not set/CONFIG_PREEMPT_RT_FULL=y/g" ${B}/.config
+        sed -ie "s/^# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g" ${B}/.config
+    fi
+}
 
 # Override the fitImage an DTB installation appended methods. We don't really need so
 # many files and links deployed. We'll create only unique and necessary minimum ones.
