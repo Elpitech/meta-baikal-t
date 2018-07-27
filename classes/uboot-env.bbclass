@@ -53,6 +53,7 @@
 # - menu - select menu page (main or recovery)
 # ${UBOOT_ENV_MENU_MAIN} - main menu items list
 # ${UBOOT_ENV_MENU_RCVR} - recovery menu items list
+# ${UBOOT_ENV_EXTRA_VARS} - extra variables printed to the env-file
 
 DEPENDS_append = " u-boot-mkimage-native"
 
@@ -96,6 +97,7 @@ UBOOT_ENV_BOOTUNITS ??= "rec_ram=1. Boot recovery kernel and RFS;rom=initfs;; \
 			 reset=Reset board;reset"
 UBOOT_ENV_MENU_MAIN ??= "rec_ram;;rec_sda1;;rec_sdb1;;reset"
 UBOOT_ENV_MENU_RCVR ??= ""
+UBOOT_ENV_EXTRA_VARS ??= ""
 
 #
 # Emit the image build information
@@ -652,6 +654,14 @@ EOF
 }
 
 #
+# Emit u-boot extra variables defined by configs
+#
+# $1 ... .env filename
+uboot_env_emit_extra() {
+	echo -ne "${UBOOT_ENV_EXTRA_VARS}" >> ${1}
+}
+
+#
 # Assemble U-boot environment image
 #
 # $1 ... environment source filename
@@ -689,6 +699,9 @@ uboot_env_assemble() {
 
 	# Emit boot menu
 	uboot_env_emit_menu "${1}"
+
+	# Emit extra variables if ones defined in configs
+	uboot_env_emit_extra "${1}"
 
 	# Create U-boot environment binary
 	uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o ${2} ${1}
