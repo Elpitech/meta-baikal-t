@@ -9,7 +9,7 @@
 # End result is:
 #
 # 1. Text file with U-boot environment description
-# 2. Binary blob compiled from the text file by U-boot native mkenvimage 
+# 2. Binary blob compiled from the text file by U-boot native mkenvimage
 
 #
 # External variables
@@ -19,7 +19,7 @@
 # ${UBOOT_ENV_CONSOLE} - kernel primary console
 # ${UBOOT_ENV_BAUDRATE} - kernel primary console baudrate
 # ${UBOOT_ENV_NUM_CORES} - number of CPU cores the kernel should start
-# ${UBOOT_ENV_CPUFREQ} - CPU frequency 
+# ${UBOOT_ENV_CPUFREQ} - CPU frequency
 # ${UBOOT_ENV_HOSTNAME} - hostname provided within U-boot
 # ${UBOOT_ENV_KERNEL_FILE_NAME} - kernel name to load over tftp
 # ${UBOOT_ENV_INITRD_FILE_NAME} - initramfs name to load over tftp
@@ -37,7 +37,7 @@
 # ${UBOOT_ENV_MTDPARTS} - list of mtd partitions available on SPI-boot flash
 # ${UBOOT_ENV_BOOTCMD} - default kernel boot command
 # ${UBOOT_ENV_BOOTDELAY} - kernel boot delay
-# ${UBOOT_ENV_BOOTMENU} - menu settings in the format "unique_id=<Menu Text>;interface=<rootdev>;<params>;;"
+# ${UBOOT_ENV_BOOTUNITS} - boot units in the format "unique_id=<Menu Text>;interface=<rootdev>;<params>;;"
 # While rootdevice can be any supported by the kernel (like /dev/sda, /dev/ramX, initfs, etc), following interfaces
 # are supported by this option:
 # - rom - boot kernel from SPI-flash recovery image. The kernel will be extracted from fitImage
@@ -50,6 +50,9 @@
 #          IP-address, mask - network mask, dnsip - DNS-server IP-address, dnsip2 - second DNS-server
 #          IP-address.
 # - reset - just reset the CPU
+# - menu - select menu page (main or recovery)
+# ${UBOOT_ENV_MENU_MAIN} - main menu items list
+# ${UBOOT_ENV_MENU_RCVR} - recovery menu items list
 
 DEPENDS_append = " u-boot-mkimage-native"
 
@@ -85,12 +88,14 @@ UBOOT_ENV_MTDPARTS ??= "bootloader;0x0;0x000E0000;ro;; \
 			information;0x000F0000;0x00010000;ro;; \
 			fitimage;0x00100000;0x00F00000;ro;; \
 			firmware;0x0;0x01000000"
-UBOOT_ENV_BOOTCMD ??= "bootmenu"
-UBOOT_ENV_BOOTDELAY ??= "10"
-UBOOT_ENV_BOOTMENU ??= "rec_ram=1. Boot recovery kernel and RFS;rom=initfs;; \
-			rec_sda1=2. Boot recovery kernel to /dev/sda1;rom=/dev/sda1;; \
-			rec_sdb1=3. Boot recovery kernel to /dev/sdb1;rom=/dev/sdb1;; \
-			reset=Reset board;reset"
+UBOOT_ENV_BOOTCMD ??= "run boot_rec_ram"
+UBOOT_ENV_BOOTDELAY ??= "5"
+UBOOT_ENV_BOOTUNITS ??= "rec_ram=1. Boot recovery kernel and RFS;rom=initfs;; \
+			 rec_sda1=2. Boot recovery kernel to /dev/sda1;rom=/dev/sda1;; \
+			 rec_sdb1=3. Boot recovery kernel to /dev/sdb1;rom=/dev/sdb1;; \
+			 reset=Reset board;reset"
+UBOOT_ENV_MENU_MAIN ??= "rec_ram;;rec_sda1;;rec_sdb1;;reset"
+UBOOT_ENV_MENU_RCVR ??= ""
 
 #
 # Emit the image build information
@@ -237,15 +242,15 @@ EOF
 # Emit SPI-flash image boot commands
 #
 # $1 ... .env filename
-# $2 ... name of the menu item
+# $2 ... name of the item
 # $3 ... root device path
 uboot_env_emit_rom_cmd() {
 
 	# Make sure the root device is valid
 	devp=$(echo ${3} | cut -c1-5)
         devi=$(echo ${3} | cut -c1-6)
-	if [ "${devp}" != "/dev/" && "${devi}" != "initfs"]; then
-		bberror "Invalid kernel root device ${3} in menu item ${2}"
+	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs"]; then
+		bberror "Invalid kernel root device ${3} in boot item ${2}"
 		return 1
 	fi
 
@@ -259,7 +264,7 @@ EOF
 # Emit SATA/USB devices boot commands
 #
 # $1 ... .its filename
-# $2 ... name of the menu item
+# $2 ... name of the item
 # $3 ... sata/usb interface
 # $4 ... root device path
 # $5 ... interface configuration arguments
@@ -274,8 +279,8 @@ uboot_env_emit_dev_cmd() {
 	# Make sure the root device is valid
 	devp=$(echo ${4} | cut -c1-5)
         devi=$(echo ${4} | cut -c1-6)
-	if [ "${devp}" != "/dev/" && "${devi}" != "initfs"]; then
-		bberror "Invalid kernel root device ${4} in menu item ${2}"
+	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs"]; then
+		bberror "Invalid kernel root device ${4} in boot item ${2}"
 		return 1
 	fi
 
@@ -295,7 +300,7 @@ uboot_env_emit_dev_cmd() {
 			dir=${argval}
 			;;
 		*)
-			bberror "Invalid argument ${argname} in menu item ${2}"
+			bberror "Invalid argument ${argname} in boot item ${2}"
 			return 1
 			;;
 		esac
@@ -307,7 +312,7 @@ uboot_env_emit_dev_cmd() {
 	elif [ "${fs}" == "fat" ]; then
 		fsop=fatload
 	else
-		bberror "Invalid filesystem ${fs} in menu item ${2}"
+		bberror "Invalid filesystem ${fs} in boot item ${2}"
 		return 1
 	fi
 
@@ -316,13 +321,13 @@ uboot_env_emit_dev_cmd() {
 	[0-9]:[0-9])
 		;;
 	*)
-		bberror "Invalid partition pair ${part} in menu item ${2}"
+		bberror "Invalid partition pair ${part} in boot item ${2}"
 		return 1
 	esac
 
 	# Parse the root directory value
 	if [ "$(echo ${dir} | cut -c1-1)" != "/" ]; then
-		bberror "${dir} isn't full path dir in menu item ${2}"
+		bberror "${dir} isn't full path dir in boot item ${2}"
 		return 1
 	fi
 
@@ -351,7 +356,8 @@ EOF
 #
 # $1 ... ip address
 uboot_env_validate_ips() {
-	local cntr=1
+	local cntr=0
+	local ip=${1}
 
 	for byte in $(echo ${ip} | tr '.' '\n'); do
 		case ${byte} in
@@ -375,7 +381,7 @@ uboot_env_validate_ips() {
 # Emit network TFTP/NFS boot commands
 #
 # $1 ... .its filename
-# $2 ... name of menu item
+# $2 ... name of the item
 # $3 ... tftp/nfs interface
 # $4 ... root device path
 # $5 ... interface configuration arguments
@@ -391,8 +397,8 @@ uboot_env_emit_net_cmd() {
 	# Make sure the root device is valid
 	devp=$(echo ${4} | cut -c1-5)
         devi=$(echo ${4} | cut -c1-6)
-	if [ "${devp}" != "/dev/" && "${devi}" != "initfs"]; then
-		bberror "Invalid kernel root device ${4} in menu item ${2}"
+	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs"]; then
+		bberror "Invalid kernel root device ${4} in boot item ${2}"
 		return 1
 	fi
 
@@ -424,7 +430,7 @@ uboot_env_emit_net_cmd() {
 			dir=${argval}
 			;;
 		*)
-			bberror "Invalid argument ${argname} in menu item ${2}"
+			bberror "Invalid argument ${argname} in boot item ${2}"
 			return 1
 			;;
 		esac
@@ -432,7 +438,7 @@ uboot_env_emit_net_cmd() {
 
 	# Make sure the mandatory arguments are defined
 	if [ -z "${ipaddr}" ]; then
-		bberror "ip is mandatory for network iface in menu item ${2}"
+		bberror "ip is mandatory for network iface in boot item ${2}"
 		return 1
 	fi
 	if [ -z "${serverip}" ]; then
@@ -462,7 +468,7 @@ uboot_env_emit_net_cmd() {
 		# Validate passed IP addresses
 		for ip in ${ipaddr} ${serverip} ${gatewayip} ${netmask} ${dnsip} ${dnsip2}; do
 			if ! uboot_env_validate_ips $ip; then
-				bberror "Invalid IP address $ip in menu item ${2}"
+				bberror "Invalid IP address $ip in boot item ${2}"
 				return 1
 			fi
 		done
@@ -474,22 +480,21 @@ uboot_env_emit_net_cmd() {
 	# Parse the root directory value if nfs interface is requested
 	if [ "${3}" == "nfs" ]; then
 		if [ "$(echo ${dir} | cut -c1-1)" != "/" ]; then
-			bberror "${dir} isn't full path dir in menu item ${2}"
+			bberror "${dir} isn't full path dir in boot item ${2}"
 			return 1
 		fi
 		dir=${dir}/
 	fi
 
 	# Set dhcp or static IPs at the interface init procedure
-	if [ "$ipaddr" == "dhcp" && -z "${serverip}" ]; then
+	if [ "$ipaddr" == "dhcp" -a -z "${serverip}" ]; then
 		cat << EOF >> ${1}
 init_${2}=dhcp
 EOF
-	else if [ "$ipaddr" == "dhcp" && ! -z "${serverip}" ]; then
+	elif [ "$ipaddr" == "dhcp" -a -n "${serverip}" ]; then
 		cat << EOF >> ${1}
 init_${2}=dhcp; setenv serverip ${serverip};
 EOF
-	else
 	else
 		cat << EOF >> ${1}
 init_${2}=setenv ipaddr ${ipaddr}; setenv serverip ${serverip}; setenv gatewayip ${gatewayip}; setenv netmask ${netmask}; setenv dnsip ${dnsip}; setenv dnsip2 ${dnsip2}
@@ -509,9 +514,24 @@ EOF
 # Emit reset U-boot commands
 #
 # $1 ... .its filename
-# $2 ... name of the menu item
+# $2 ... name of the item
 uboot_env_emit_reset_cmd() {
 	echo "boot_${2}=reset" >> ${1}
+}
+
+#
+# Emit menu page selector command
+#
+# $1 ... .its filename
+# $2 ... name of the item
+# $3 ... page name
+uboot_env_emit_menu_cmd() {
+	if [ "${3}" != "main" -a "${3}" != "recovery" ]; then
+		bberror "Invalid command ${2} menu page name ${3}"
+		return 1
+	fi
+
+	echo "boot_${2}=run menu_page_${3}" >> ${1}
 }
 
 #
@@ -524,28 +544,29 @@ bootcmd=${UBOOT_ENV_BOOTCMD}
 bootdelay=${UBOOT_ENV_BOOTDELAY}
 EOF
 
-	# UBOOT_ENV_BOOTMENU consists of menu items separated by the double semicolon pattern.
+	# UBOOT_ENV_BOOTUNITS consists of boot items separated by the double semicolon pattern.
 	# We'll walk over all the items calling the corresponding boot command handler.
-	bootmenu=$(echo "${UBOOT_ENV_BOOTMENU}" | sed 's/^\s*//g;s/\s*$//g')
+	bootunits=$(echo "${UBOOT_ENV_BOOTUNITS}" | sed 's/^\s*//g;s/\s*$//g')
+	bootmenu="${UBOOT_ENV_MENU_MAIN}"
 	idx=0
-	while [ -n "$bootmenu" ]; do
-		# Extract leading menuitem and discard it from the bootmenu handling the
-		# last case when ;; delimiter is absent 
-		menuitem=$(echo "${bootmenu%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
-		bootmenu=$(echo "${bootmenu#*;;}" | sed 's/^\s*//g;s/\s*$//g')
-		[ "${menuitem}" == "${bootmenu}" ] && bootmenu=""
+	while [ -n "$bootunits" ]; do
+		# Extract leading unit and discard it from the bootunits handling the
+		# last case when ;; delimiter is absent
+		item=$(echo "${bootunits%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
+		bootunits=$(echo "${bootunits#*;;}" | sed 's/^\s*//g;s/\s*$//g')
+		[ "${item}" == "${bootunits}" ] && bootunits=""
 
 		# Detach mandatory menu text string simultaniously checking whether the
 		# menuitem consists of at least two section
-		itemname=$(echo "$menuitem" | cut -d";" -f1 -s | cut -d"=" -f1 -s)
-		itemtext=$(echo "$menuitem" | cut -d";" -f1 -s | cut -d"=" -f2 -s)
+		itemname=$(echo "$item" | cut -d";" -f1 -s | cut -d"=" -f1 -s)
+		itemtext=$(echo "$item" | cut -d";" -f1 -s | cut -d"=" -f2 -s)
 		if [ -z "${itemname}" -o -z "${itemtext}" ]; then
-			echo "Bootmenu item name/text is empty ($menuitem)"
+			echo "Boot item name/text is empty ($item)"
 			continue
 		fi
-		iface=$(echo "$menuitem" | cut -d";" -f2 | cut -d"=" -f1)
-		rootdev=$(echo "$menuitem" | cut -d";" -f2 | cut -d"=" -f2 -s)
-		ifargs=$(echo "$menuitem" | cut -d";" -f3-)
+		iface=$(echo "$item" | cut -d";" -f2 | cut -d"=" -f1)
+		rootdev=$(echo "$item" | cut -d";" -f2 | cut -d"=" -f2 -s)
+		ifargs=$(echo "$item" | cut -d";" -f3-)
 
 		# Create corresponing initialization commands sequence
 		case ${iface} in
@@ -558,21 +579,76 @@ EOF
 		tftp|nfs)
 			uboot_env_emit_net_cmd "${1}" "${itemname}" "${iface}" "${rootdev}" "${ifargs}"
 			;;
+		menu)
+			uboot_env_emit_menu_cmd "${1}" "${itemname}" "${rootdev}"
+			;;
 		reset)
 			uboot_env_emit_reset_cmd "${1}" "${itemname}"
 			;;
 		*)
-			bberror "Unknown interface ${iface} in menu item (${menuitem})"
+			bberror "Unknown interface ${iface} in boot item (${item})"
 			continue
 			;;
 		esac
 
-		# Emit bootmenu in case if initialization sequence was emitted successfully
+		# Emit menu_item if command was emitted successfully
 		if [ $? -eq 0 ]; then
-			echo "bootmenu_${idx}=${itemtext}=run boot_${itemname}" >> ${1}
-			idx=$(expr $idx + 1)
+			echo "menu_item_${itemname}=${itemtext}=run boot_${itemname}" >> ${1}
+			# Create default bootmenu if it is a part of the main menu list
+			if [ -z "${bootmenu##*${itemname}*}" ]; then
+				echo "bootmenu_${idx}=${itemtext}=run boot_${itemname}" >> ${1}
+				idx=$(expr $idx + 1)
+			fi
 		fi
 	done
+}
+
+#
+# Emit u-boot menu page collector
+#
+# $1 ... .env filename
+# $2 ... page name
+# $3 ... list of menu items
+uboot_env_emit_menu_page() {
+	# Create main menu selector
+	menuitems=$(echo "${3}" | sed 's/^\s*//g;s/\s*$//g')
+	menupage=""
+	idx=0
+	while [ -n "$menuitems" ]; do
+		# Extract leading unit and discard it from the bootunits handling the
+		# last case when ;; delimiter is absent
+		item=$(echo "${menuitems%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
+		menuitems=$(echo "${menuitems#*;;}" | sed 's/^\s*//g;s/\s*$//g')
+		[ "${item}" == "${menuitems}" ] && menuitems=""
+
+		if [ -n "${menupage}" ]; then
+			menupage="${menupage}; setenv bootmenu_${idx} \$menu_item_${item}"
+		else
+			menupage="setenv bootmenu_${idx} \$menu_item_${item}"
+		fi
+
+		idx=$(expr $idx + 1)
+	done
+
+	if [ ! -z "${menupage}" ]; then
+		echo "menu_page_${2}=${menupage}; setenv bootmenu_${idx}; bootmenu -1" >> ${1}
+	fi
+}
+
+#
+# Emit u-boot menu page collector
+#
+# $1 ... .env filename
+uboot_env_emit_menu() {
+	cat << EOF >> ${1}
+menucmd=bootmenu -1
+EOF
+
+	# Create main menu page selector
+	uboot_env_emit_menu_page "${1}" "main" "${UBOOT_ENV_MENU_MAIN}"
+
+	# Create recovery menu page selector
+	uboot_env_emit_menu_page "${1}" "recovery" "${UBOOT_ENV_MENU_RCVR}"
 }
 
 #
@@ -608,8 +684,11 @@ uboot_env_assemble() {
 	# Create variables with common kernel boot arguments
 	uboot_env_emit_boot_args "${1}"
 
-	# Emit kernel boot menu and commands
+	# Emit kernel boot commands and menu items
 	uboot_env_emit_boot_cmd "${1}"
+
+	# Emit boot menu
+	uboot_env_emit_menu "${1}"
 
 	# Create U-boot environment binary
 	uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o ${2} ${1}
