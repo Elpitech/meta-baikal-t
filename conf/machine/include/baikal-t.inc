@@ -11,9 +11,12 @@ MACHINE_FEATURES = "serial pci usbhost"
 SERIAL_CONSOLE = "115200 ttyS0"
 
 # Default kernel code parameters
+LINUXLIBCVERSION ?= "4.4%"
+PREFERRED_VERSION_linux-baikal ?= "4.4%"
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-baikal"
 
 # Default u-boot code parameters
+PREFERRED_VERSION_u-boot-baikal ?= "2014.10"
 PREFERRED_PROVIDER_virtual/bootloader ?= "u-boot-baikal"
 PREFERRED_PROVIDER_u-boot ?= "u-boot-baikal"
 PREFERRED_PROVIDER_u-boot-mkimage ?= "u-boot-baikal-mk-tools"
