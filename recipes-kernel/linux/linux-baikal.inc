@@ -7,15 +7,17 @@ LIC_FILES_CHKSUM = "file://COPYING;md5=d7810fab7487fb0aad327b76f1be7cd7"
 # We don't use kernel-yocto class since it's overwhelmed with kmeta functions,
 # which we don't indend to use. Additionally we set fitImage class to be supported
 # by the recipe, so to use it in recovery-image creation procedure.
+KERNEL_IMAGETYPE = "fitImage"
 KERNEL_CLASSES = " kernel-fitimage "
 
 inherit kernel
 
-DEPENDS += "xz-native"
+DEPENDS += "xz-native openssl-native"
 
-SRC_URI ?= "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;branch=${KBRANCH}"
-SRCREV ?= "${AUTOREV}"
+SRC_URI = "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;branch=${KBRANCH}"
+SRCREV = "${AUTOREV}"
 S = "${WORKDIR}/git"
+B = "${WORKDIR}/build"
 
 # It must be ${PV} branch by default. The specific revision shall be extracted from
 # the sources by kernel.bbclass, so shut the version sanity check up
@@ -59,6 +61,30 @@ do_configure_append() {
         sed -ie "s/^# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g" ${B}/.config
     fi
 }
+
+# Create rsa-key if u-boot signature is enabled
+python do_create_keys() {
+    if d.getVar("UBOOT_SIGN_ENABLE", True) != "1" or d.getVar("UBOOT_SIGN_KEYDIR", True) != "":
+        return
+
+    keydir = os.path.join(d.getVar("WORKDIR", True), "keys")
+    keysuf = os.path.join(keydir, "dev")
+    priv = keysuf + ".key"
+    cert = keysuf + ".crt"
+    pub = keysuf + ".pub"
+
+    try:
+        bb.utils.mkdirhier(keydir)
+        bb.process.run(["openssl", "genpkey", "-algorithm", "RSA", "-out", priv, "-pkeyopt", "rsa_keygen_bits:2048", "-pkeyopt", "rsa_keygen_pubexp:65537"])
+        bb.process.run(["openssl", "req", "-batch", "-new", "-x509", "-key", priv, "-out", cert])
+        pubkey, _ = bb.process.run(["openssl", "rsa", "-in", priv, "-pubout"])
+        with open(pub, 'w') as f:
+            f.write(pubkey.split("\n", 1)[1])
+    except bb.process.ExecutionError:
+        bb.error("Failed to create rsa-keys")
+}
+
+addtask do_create_keys after do_compile before do_assemble_fitimage
 
 # Override the fitImage an DTB installation appended methods. We don't really need so
 # many files and links deployed. We'll create only unique and necessary minimum ones.
@@ -116,6 +142,20 @@ do_deploy_append() {
             ln -sf fitImage-initramfs-${FIT_IMAGE_BASE_NAME}.its ${DEPLOYDIR}/fitImage-initramfs-${FIT_IMAGE_SYMLINK_NAME}.its
             install -m 0644 arch/${ARCH}/boot/fitImage-${INITRAMFS_IMAGE} ${DEPLOYDIR}/fitImage-initramfs-${FIT_IMAGE_BASE_NAME}.bin
             ln -sf fitImage-initramfs-${FIT_IMAGE_BASE_NAME}.bin ${DEPLOYDIR}/fitImage-initramfs-${FIT_IMAGE_SYMLINK_NAME}.bin
+        fi
+
+        # Deploy signature keys
+        if [ "${UBOOT_SIGN_ENABLE}" == "1" -a -z "${UBOOT_SIGN_KEYDIR}" ]; then
+            bbdebug 2 "Copying U-boot signature keys..."
+
+            keysuf="${WORKDIR}/keys/dev"
+
+            install -m 0644 ${keysuf}.key ${DEPLOYDIR}/sign-${FIT_IMAGE_BASE_NAME}.key
+            ln -sf sign-${FIT_IMAGE_BASE_NAME}.key ${DEPLOYDIR}/sign-${FIT_IMAGE_SYMLINK_NAME}.key
+            install -m 0644 ${keysuf}.crt ${DEPLOYDIR}/sign-${FIT_IMAGE_BASE_NAME}.crt
+            ln -sf sign-${FIT_IMAGE_BASE_NAME}.crt ${DEPLOYDIR}/sign-${FIT_IMAGE_SYMLINK_NAME}.crt
+            install -m 0644 ${keysuf}.pub ${DEPLOYDIR}/sign-${FIT_IMAGE_BASE_NAME}.pub
+            ln -sf sign-${FIT_IMAGE_BASE_NAME}.pub ${DEPLOYDIR}/sign-${FIT_IMAGE_SYMLINK_NAME}.pub
         fi
     fi
 
