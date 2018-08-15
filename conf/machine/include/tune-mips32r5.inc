@@ -31,8 +31,9 @@ PACKAGE_EXTRA_ARCHS_tune-mips32r5el-nf = "mipsel-nf mips32el-nf mips32r2el-nf mi
 
 # Set GCC default build settings
 MIPS32R5_OECONF  = "${@'--with-abi=32 --with-arch=mips32r5' if '${DEFAULTTUNE}' in ['mips32r5', 'mips32r5el', 'mips32r5-nf', 'mips32r5el-nf'] else ''}"
-MIPS32R5_OECONF += "${@'--with-float=hard' if '${DEFAULTTUNE}' in ['mips32r5', 'mips32r5el'] else ''}"
+MIPS32R5_OECONF += "${@'--with-float=hard --with-fp-32=64 --with-odd-sp-reg-32' if '${DEFAULTTUNE}' in ['mips32r5', 'mips32r5el'] else ''}"
 MIPS32R5_OECONF += "${@'--with-float=soft' if '${DEFAULTTUNE}' in ['mips32r5-nf', 'mips32r5el-nf'] else ''}"
+MIPS32R5_OECONF += "--enable-target-optspace --enable-plugin --with-mips-plt"
 EXTRA_OECONF_append_pn-gcc = " ${MIPS32R5_OECONF}"
 EXTRA_OECONF_append_pn-gcc-cross-initial-${TARGET_ARCH} = " ${MIPS32R5_OECONF}"
 EXTRA_OECONF_append_pn-gcc-cross-${TARGET_ARCH} = " ${MIPS32R5_OECONF}"

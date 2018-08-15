@@ -31,7 +31,7 @@ PACKAGE_EXTRA_ARCHS_tune-p5600el-nf = "mipsel-nf mips32el-nf mips32r2el-nf mips3
 
 # MIPS 64-bits floating point registers feature
 TUNEVALID[fp64] = "Use MIPS 64-bits FP registers"
-TUNE_CCARGS .= "${@bb.utils.contains('TUNE_FEATURES', 'fp64', ' -mfp64', '', d)}"
+TUNE_CCARGS .= "${@bb.utils.contains('TUNE_FEATURES', 'fp64', ' -mfp64', '-mfpxx', d)}"
 
 # MIPS eXtended Physical Address (XPA) instructions
 TUNEVALID[xpa] = "Use MIPS XPA instructions"
@@ -67,5 +67,5 @@ TUNE_FEATURES_tune-p5600el-nf += "fp64 xpa eva virt ${TUNE_P5600_MSA}"
 
 # Overwrite GCC default tunes specified by tune-mips32r5
 MIPS32R5_OECONF  = "${@'--with-abi=32 --with-arch=p5600' if '${DEFAULTTUNE}' in ['p5600', 'p5600el', 'p5600-nf', 'p5600el-nf'] else ''}"
-MIPS32R5_OECONF += "${@'--with-float=hard' if '${DEFAULTTUNE}' in ['p5600', 'p5600el'] else ''}"
+MIPS32R5_OECONF += "${@'--with-float=hard --with-fp-32=64 --with-odd-sp-reg-32' if '${DEFAULTTUNE}' in ['p5600', 'p5600el'] else ''}"
 MIPS32R5_OECONF += "${@'--with-float=soft' if '${DEFAULTTUNE}' in ['p5600-nf', 'p5600el-nf'] else ''}"
