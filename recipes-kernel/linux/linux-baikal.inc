@@ -14,6 +14,7 @@ inherit kernel
 
 DEPENDS += "xz-native openssl-native"
 
+EXTERNALSRC = "${EXTERNAL_KERNEL_SRC}"
 SRC_URI = "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;branch=${KBRANCH}"
 SRCREV = "${AUTOREV}"
 S = "${WORKDIR}/git"
@@ -64,7 +65,7 @@ do_configure_append() {
 
 # Create rsa-key if u-boot signature is enabled
 python do_create_keys() {
-    if d.getVar("UBOOT_SIGN_ENABLE", True) != "1" or d.getVar("UBOOT_SIGN_KEYDIR", True) != "":
+    if d.getVar("UBOOT_SIGN_ENABLE", True) != "1" or d.getVar("UBOOT_SIGN_KEYDIR", True):
         return
 
     keydir = os.path.join(d.getVar("WORKDIR", True), "keys")

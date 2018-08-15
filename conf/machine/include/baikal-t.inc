@@ -10,6 +10,11 @@ require conf/machine/include/soc-family.inc
 MACHINE_FEATURES = "serial pci usbhost"
 SERIAL_CONSOLE = "115200 ttyS0"
 
+# External sources settings
+INHERIT += "externalsrc"
+EXTERNAL_KERNEL_SRC ?= ""
+EXTERNAL_UBOOT_SRC ?= ""
+
 # Default kernel code parameters
 LINUXLIBCVERSION ?= "4.4%"
 PREFERRED_VERSION_linux-baikal ?= "4.4%"
