@@ -1,52 +1,30 @@
-SUMMARY = "Linux kernel"
-DESCRIPTION = "Custom Linux kernel source code specifically patched for Baikal-T based devices"
-SECTION = "kernel"
-LICENSE = "GPLv2"
-LIC_FILES_CHKSUM = "file://COPYING;md5=d7810fab7487fb0aad327b76f1be7cd7"
+KBRANCH ?= "linux-${@'rt-' if '${LINUX_KERNEL_TYPE}' == 'preempt-rt' else ''}${PV}.y-tp"
 
-# We don't use kernel-yocto class since it's overwhelmed with kmeta functions,
-# which we don't indend to use. Additionally we set fitImage class to be supported
-# by the recipe, so to use it in recovery-image creation procedure.
-KERNEL_IMAGETYPE = "fitImage"
-KERNEL_CLASSES = " kernel-fitimage "
+require recipes-kernel/linux/linux-yocto.inc
 
-inherit kernel
-
-DEPENDS += "xz-native openssl-native"
+SRCREV_machine ?= "${AUTOREV}"
+SRCREV_meta ?= "${AUTOREV}"
 
 EXTERNALSRC = "${EXTERNAL_KERNEL_SRC}"
-SRC_URI = "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;branch=${KBRANCH}"
-SRCREV = "${AUTOREV}"
-S = "${WORKDIR}/git"
-B = "${WORKDIR}/build"
+SRC_URI = "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;name=machine;branch=${KBRANCH}; \
+           git://git.yoctoproject.org/yocto-kernel-cache;type=kmeta;name=meta;branch=yocto-${PV};destsuffix=${KMETA}"
 
-# It must be ${PV} branch by default. The specific revision shall be extracted from
-# the sources by kernel.bbclass, so shut the version sanity check up
-KERNEL_REALTIME ?= "0"
-KBRANCH ?= "linux-${@'rt-' if '${KERNEL_REALTIME}' == '1' else ''}${PV}.y-tp"
+DEPENDS += "openssl-native util-linux-native"
+
 LINUX_VERSION ?= "${PV}"
 KERNEL_VERSION_SANITY_SKIP = "1"
 
-# We use the kernel default config selected by the <machine>.conf file
-KERNEL_CONFIG_COMMAND = "oe_runmake -C ${S} O=${B} ${KBUILD_DEFCONFIG} silentoldconfig"
+KCONFIG_MODE = "--alldefconfig"
+KMETA = "kernel-meta"
+KCONF_BSP_AUDIT_LEVEL = "2"
 
-# Yeah, you may want to clean up some sections, but in additional it will delete ALL the
-# symbols, so you won't be able to build kernel modules again!
-# DON'T USE THIS VARIABLE! IT BREAKS KERNEL BUILD PROCESS!
-#############KERNEL_IMAGE_STRIP_EXTRA_SECTIONS  = ".comment"###############
+COMPATIBLE_MACHINE = "baikal|qemumips|qemumips64"
 
-# The kernel source code shall be at least compatible with baikal SoC and qemu MIPS-targets
-COMPATIBLE_MACHINE = "(baikal|qemumips)"
+# Functionality flags
+KERNEL_EXTRA_FEATURES ?= ""
+KERNEL_FEATURES_append = " ${KERNEL_EXTRA_FEATURES}"
 
-# Skip processing of this recipe if it is not explicitly specified as the
-# PREFERRED_PROVIDER for virtual/kernel. This avoids network access required
-# by the use of AUTOREV SRCREVs, which are the default for this recipe.
-python () {
-    if d.getVar("PREFERRED_PROVIDER_virtual/kernel") != d.getVar("PN"):
-        d.delVar("BB_DONT_CACHE")
-        raise bb.parse.SkipPackage("Set PREFERRED_PROVIDER_virtual/kernel to %s to enable it" % (d.getVar("PN")))
-}
-
+# Customized kernel names
 FIT_IMAGE_BASE_NAME ??= "${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 FIT_IMAGE_SYMLINK_NAME ??= "${MACHINE}"
 FIT_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
@@ -54,14 +32,6 @@ DTB_IMAGE_BASE_NAME ??= "${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 DTB_IMAGE_SYMLINK_NAME ??= "${MACHINE}"
 DTB_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
 MODULE_TARBALL_BASE_NAME[vardepsexclude] += "DATETIME"
-
-# Modify kernel config if real-time option is selected
-do_configure_append() {
-    if [ "${KERNEL_REALTIME}" == "1" ]; then
-        sed -ie "s/^# CONFIG_PREEMPT_RT_FULL is not set/CONFIG_PREEMPT_RT_FULL=y/g" ${B}/.config
-        sed -ie "s/^# CONFIG_HIGH_RES_TIMERS is not set/CONFIG_HIGH_RES_TIMERS=y/g" ${B}/.config
-    fi
-}
 
 # Create rsa-key if u-boot signature is enabled
 python do_create_keys() {
@@ -84,10 +54,9 @@ python do_create_keys() {
     except bb.process.ExecutionError:
         bb.error("Failed to create rsa-keys")
 }
-
 addtask do_create_keys after do_compile before do_assemble_fitimage
 
-# Override the fitImage an DTB installation appended methods. We don't really need so
+# Fix the deployed fitImage and DTB file names. We don't really need so
 # many files and links deployed. We'll create only unique and necessary minimum ones.
 do_deploy_append() {
     # Remove kernel image symlinks and replace non-fitImages with proper one
@@ -187,5 +156,3 @@ do_deploy_append() {
         fi
     done
 }
-
-addtask kernel_version_sanity_check after do_kernel_checkout before do_compile
