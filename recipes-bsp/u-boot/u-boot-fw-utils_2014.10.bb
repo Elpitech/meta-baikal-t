@@ -1,15 +1,9 @@
+require u-boot-baikal-common.inc
+
 SUMMARY = "U-Boot bootloader fw_printenv/setenv utilities"
-DESCRIPTION = "U-boot firmware utilities specifically created to read/write environment image from Linux mtd-devices"
-HOMEPAGE = "http://www.denx.de/wiki/U-Boot/WebHome"
-SECTION = "bootloaders"
-LICENSE = "GPLv2+"
-LIC_FILES_CHKSUM = "file://Licenses/README;md5=c7383a594871c03da76b3707929d2919"
 DEPENDS = "mtd-utils"
 
-require u-boot-baikal.inc
-
 INSANE_SKIP_${PN} = "already-stripped"
-RPROVIDES_${PN} += "u-boot-fw-utils"
 EXTRA_OEMAKE_class-target = 'CROSS_COMPILE=${TARGET_PREFIX} CC="${CC} ${CFLAGS} ${LDFLAGS}" HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" V=1'
 EXTRA_OEMAKE_class-cross = 'HOSTCC="${CC} ${CFLAGS} ${LDFLAGS}" V=1'
 

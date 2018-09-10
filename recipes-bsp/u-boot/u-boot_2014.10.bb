@@ -1,12 +1,5 @@
-SUMMARY = "Universal Boot Loader for embedded devices"
-DESCRIPTION = "Custom U-boot source code specifically patched for Baikal-T based devices"
-HOMEPAGE = "http://www.denx.de/wiki/U-Boot/WebHome"
-SECTION = "bootloaders"
-LICENSE = "GPLv2+"
-LIC_FILES_CHKSUM = "file://Licenses/README;md5=c7383a594871c03da76b3707929d2919"
-
 require recipes-bsp/u-boot/u-boot.inc
-require u-boot-baikal.inc
+require u-boot-baikal-common.inc
 
 inherit uboot-env
 

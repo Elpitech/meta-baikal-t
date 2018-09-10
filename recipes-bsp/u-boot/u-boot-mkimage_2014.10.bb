@@ -1,20 +1,10 @@
+require u-boot-baikal-common.inc
+
 SUMMARY = "U-Boot bootloader image creation tools"
-DESCRIPTION = "U-boot mk(env)image tools used to generate bootloader-specific binaries"
-HOMEPAGE = "http://www.denx.de/wiki/U-Boot/WebHome"
-SECTION = "bootloaders"
-LICENSE = "GPLv2+"
-LIC_FILES_CHKSUM = "file://Licenses/README;md5=c7383a594871c03da76b3707929d2919"
 DEPENDS = "openssl"
 
-require u-boot-baikal.inc
-
-PROVIDES_append_class-target = " u-boot-mkimage"
 EXTRA_OEMAKE_class-target = 'CROSS_COMPILE="${TARGET_PREFIX}" CC="${CC} ${CFLAGS} ${LDFLAGS}" HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" STRIP=true V=1'
-
-PROVIDES_append_class-native = " u-boot-mkimage-native"
 EXTRA_OEMAKE_class-native = 'CC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" STRIP=true V=1'
-
-PROVIDES_append_class-nativesdk = " u-boot-mkimage-nativesdk"
 EXTRA_OEMAKE_class-nativesdk = 'CROSS_COMPILE="${HOST_PREFIX}" CC="${CC} ${CFLAGS} ${LDFLAGS}" HOSTCC="${BUILD_CC} ${BUILD_CFLAGS} ${BUILD_LDFLAGS}" STRIP=true V=1'
 
 do_compile () {
@@ -35,5 +25,7 @@ do_install () {
 	ln -sf uboot-mkimage ${D}${bindir}/mkimage
 	ln -sf uboot-mkenvimage ${D}${bindir}/mkenvimage
 }
+
+RDEPENDS_${PN} += "dtc"
 
 BBCLASSEXTEND = "native nativesdk"
