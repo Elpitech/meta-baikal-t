@@ -2,8 +2,11 @@ KBRANCH ?= "linux-${@'rt-' if '${LINUX_KERNEL_TYPE}' == 'preempt-rt' else ''}${P
 
 require recipes-kernel/linux/linux-yocto.inc
 
-SRCREV_machine ?= "${AUTOREV}"
-SRCREV_meta ?= "${AUTOREV}"
+#SRCREV_machine ?= "${@'62aad652064169de4864c582dc6d6a6c6c169e9e' if '${LINUX_KERNEL_TYPE}' == 'preempt-rt' else 'd42b997c803076fb15afc762558ad085c8083318'}"
+#SRCREV_meta ?= "b41a36ffe53f73c86a0f3672d32b5ebec59ab15e"
+
+SRCREV_machine ?= "AUTOINC"
+SRCREV_meta ?= "AUTOINC"
 
 EXTERNALSRC = "${EXTERNAL_KERNEL_SRC}"
 SRC_URI = "git://192.168.1.253/IT/T-Platforms/sdk/kernel.git;protocol=ssh;user=git;name=machine;branch=${KBRANCH}; \
