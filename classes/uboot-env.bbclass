@@ -167,14 +167,14 @@ uboot_env_emit_mtd_vars() {
 		# last case when ;; delimiter is absent
 		partitem=$(echo "${parts%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
 		parts=$(echo "${parts#*;;}" | sed 's/^\s*//g;s/\s*$//g')
-		[ "${partitem}" == "${parts}" ] && parts="" && delim=""
+		[ "${partitem}" = "${parts}" ] && parts="" && delim=""
 
 		# Detach name;offset;size[;ro] sections simultaniously checking whether
 		# the mandatory sections aren't empty
 		partname=$(echo "$partitem" | cut -d";" -f1 -s)
 		partoff=$(echo "$partitem" | cut -d";" -f2 -s)
 		partsize=$(echo "$partitem" | cut -d";" -f3 -s)
-		if [ -z "${partname}" -o -z "${partoff}" -o -z "${partsize}"]; then
+		if [ -z "${partname}" -o -z "${partoff}" -o -z "${partsize}" ]; then
 			echo "MTD item name/offset/size is inconsistent ($partitem)"
 			continue
 		fi
@@ -251,7 +251,7 @@ uboot_env_emit_rom_cmd() {
 	# Make sure the root device is valid
 	devp=$(echo ${3} | cut -c1-5)
         devi=$(echo ${3} | cut -c1-6)
-	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs"]; then
+	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs" ]; then
 		bberror "Invalid kernel root device ${3} in boot item ${2}"
 		return 1
 	fi
@@ -281,7 +281,7 @@ uboot_env_emit_dev_cmd() {
 	# Make sure the root device is valid
 	devp=$(echo ${4} | cut -c1-5)
         devi=$(echo ${4} | cut -c1-6)
-	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs"]; then
+	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs" ]; then
 		bberror "Invalid kernel root device ${4} in boot item ${2}"
 		return 1
 	fi
@@ -309,9 +309,9 @@ uboot_env_emit_dev_cmd() {
 	done
 
 	# Select corresponding FS operation
-	if [ "${fs}" == "ext" ]; then
+	if [ "${fs}" = "ext" ]; then
 		fsop=ext4load
-	elif [ "${fs}" == "fat" ]; then
+	elif [ "${fs}" = "fat" ]; then
 		fsop=fatload
 	else
 		bberror "Invalid filesystem ${fs} in boot item ${2}"
@@ -334,7 +334,7 @@ uboot_env_emit_dev_cmd() {
 	fi
 
 	# Select proper init and fini methods
-	if [ "${3}" == "sata" ]; then
+	if [ "${3}" = "sata" ]; then
 		init_exec="sata init"
 		fini_exec="sata reset"
 	else
@@ -399,7 +399,7 @@ uboot_env_emit_net_cmd() {
 	# Make sure the root device is valid
 	devp=$(echo ${4} | cut -c1-5)
         devi=$(echo ${4} | cut -c1-6)
-	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs"]; then
+	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs" ]; then
 		bberror "Invalid kernel root device ${4} in boot item ${2}"
 		return 1
 	fi
@@ -480,7 +480,7 @@ uboot_env_emit_net_cmd() {
 	fi
 
 	# Parse the root directory value if nfs interface is requested
-	if [ "${3}" == "nfs" ]; then
+	if [ "${3}" = "nfs" ]; then
 		if [ "$(echo ${dir} | cut -c1-1)" != "/" ]; then
 			bberror "${dir} isn't full path dir in boot item ${2}"
 			return 1
@@ -489,11 +489,11 @@ uboot_env_emit_net_cmd() {
 	fi
 
 	# Set dhcp or static IPs at the interface init procedure
-	if [ "$ipaddr" == "dhcp" -a -z "${serverip}" ]; then
+	if [ "$ipaddr" = "dhcp" -a -z "${serverip}" ]; then
 		cat << EOF >> ${1}
 init_${2}=dhcp
 EOF
-	elif [ "$ipaddr" == "dhcp" -a -n "${serverip}" ]; then
+	elif [ "$ipaddr" = "dhcp" -a -n "${serverip}" ]; then
 		cat << EOF >> ${1}
 init_${2}=dhcp; setenv serverip ${serverip};
 EOF
@@ -556,7 +556,7 @@ EOF
 		# last case when ;; delimiter is absent
 		item=$(echo "${bootunits%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
 		bootunits=$(echo "${bootunits#*;;}" | sed 's/^\s*//g;s/\s*$//g')
-		[ "${item}" == "${bootunits}" ] && bootunits=""
+		[ "${item}" = "${bootunits}" ] && bootunits=""
 
 		# Detach mandatory menu text string simultaniously checking whether the
 		# menuitem consists of at least two section
@@ -621,7 +621,7 @@ uboot_env_emit_menu_page() {
 		# last case when ;; delimiter is absent
 		item=$(echo "${menuitems%%;;*}" | sed 's/^\s*//g;s/\s*$//g')
 		menuitems=$(echo "${menuitems#*;;}" | sed 's/^\s*//g;s/\s*$//g')
-		[ "${item}" == "${menuitems}" ] && menuitems=""
+		[ "${item}" = "${menuitems}" ] && menuitems=""
 
 		if [ -n "${menupage}" ]; then
 			menupage="${menupage}; setenv bootmenu_${idx} \$menu_item_${item}"
