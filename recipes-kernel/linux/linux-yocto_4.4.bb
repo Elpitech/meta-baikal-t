@@ -154,10 +154,6 @@ do_deploy_append() {
 
         bbdebug 2 "Copying ${DTB_BASE_NAME}.${DTB_EXT} files"
         install -m 0644 ${DTB_PATH} ${DEPLOYDIR}/${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT}
-        if ! echo ${DTB_BASE_NAME} | grep -q ${DTB_IMAGE_SYMLINK_NAME}; then
-            ln -sf ${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT} ${DEPLOYDIR}/${DTB_BASE_NAME}-${DTB_IMAGE_SYMLINK_NAME}.${DTB_EXT}
-        else
-            ln -sf ${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT} ${DEPLOYDIR}/${DTB_BASE_NAME}.${DTB_EXT}
-        fi
+        ln -sf ${DTB_BASE_NAME}-${DTB_IMAGE_BASE_NAME}.${DTB_EXT} ${DEPLOYDIR}/${DTB_BASE_NAME}.${DTB_EXT}
     done
 }
