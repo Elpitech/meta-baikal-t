@@ -707,6 +707,7 @@ uboot_env_assemble() {
 	uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o ${2} ${1}
 }
 
+do_assemble_uboot_env[vardepsexclude] += "DATETIME"
 do_assemble_uboot_env() {
 	uboot_env_assemble "${WORKDIR}/u-boot-env.txt" "${WORKDIR}/u-boot-env.bin"
 }
