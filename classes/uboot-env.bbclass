@@ -111,6 +111,7 @@ build_date=${DATE}
 build_target=${MACHINE}
 EOF
 }
+uboot_env_emit_build_info[vardepsexclude] = "DATE"
 
 #
 # Emit the SoC parameters
@@ -707,21 +708,20 @@ uboot_env_assemble() {
 	uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o ${2} ${1}
 }
 
-do_assemble_uboot_env[vardepsexclude] += "DATETIME"
 do_assemble_uboot_env() {
 	uboot_env_assemble "${WORKDIR}/u-boot-env.txt" "${WORKDIR}/u-boot-env.bin"
 }
+do_assemble_uboot_env[vardepsexclude] = "DATETIME DATE do_compile"
 addtask assemble_uboot_env after do_compile before do_install do_deploy
 
-do_install[vardepsexclude] += "DATETIME"
 do_install_append () {
 	install -m 644 "${WORKDIR}/u-boot-env.txt" "${D}/boot/${UBOOT_ENV_BASE_NAME}.txt"
 	install -m 644 "${WORKDIR}/u-boot-env.bin" "${D}/boot/${UBOOT_ENV_BASE_NAME}.bin"
 	ln -sf "${UBOOT_ENV_BASE_NAME}.txt" "${D}/boot/${UBOOT_ENV_SYMLINK_NAME}.txt"
 	ln -sf "${UBOOT_ENV_BASE_NAME}.bin" "${D}/boot/${UBOOT_ENV_SYMLINK_NAME}.bin"
 }
+do_install[vardepsexclude] += "DATETIME"
 
-do_deploy[vardepsexclude] += "DATETIME"
 do_deploy_append() {
 	install -d ${DEPLOYDIR}
 	install -m 644 "${WORKDIR}/u-boot-env.txt" "${DEPLOYDIR}/${UBOOT_ENV_BASE_NAME}.txt"
@@ -729,3 +729,4 @@ do_deploy_append() {
 	ln -sf "${UBOOT_ENV_BASE_NAME}.txt" "${DEPLOYDIR}/${UBOOT_ENV_SYMLINK_NAME}.txt"
 	ln -sf "${UBOOT_ENV_BASE_NAME}.bin" "${DEPLOYDIR}/${UBOOT_ENV_SYMLINK_NAME}.bin"
 }
+do_deploy[vardepsexclude] += "DATETIME"
