@@ -5,6 +5,7 @@ inherit uboot-env
 
 DEPENDS += "bc-native dtc-native"
 
+UBOOT_NODTB_BINARY = "u-boot.${UBOOT_SUFFIX}"
 UBOOT_BASE_NAME ??= "${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 UBOOT_SYMLINK_NAME ??= "${MACHINE}"
 UBOOT_BASE_NAME[vardepsexclude] += "DATETIME"
@@ -109,7 +110,8 @@ do_concat_dtb () {
                         install ${B}/${UBOOT_BINARY} ${DEPLOYDIR}/u-boot-${UBOOT_BASE_NAME}.${UBOOT_SUFFIX}
                         install ${B}/${UBOOT_BINARY} ${DEPLOY_DIR_IMAGE}/u-boot-${UBOOT_BASE_NAME}.${UBOOT_SUFFIX}
                 elif [ -e "${DEPLOYDIR}/u-boot-nodtb-${UBOOT_BASE_NAME}.${UBOOT_SUFFIX}" ]; then
-                        bbnote "DTB with public key is already concatenated with U-boot"
+                        cd ${DEPLOYDIR}
+                        cat u-boot-nodtb-${UBOOT_BASE_NAME}.${UBOOT_SUFFIX} u-boot-${UBOOT_BASE_NAME}.dtb > u-boot-${UBOOT_BASE_NAME}.${UBOOT_SUFFIX}
                 else
                         bbnote "DTB must be embedded to U-boot binary (CONFIG_OF_EMBED), otherwise verified boot won't work."
                 fi
