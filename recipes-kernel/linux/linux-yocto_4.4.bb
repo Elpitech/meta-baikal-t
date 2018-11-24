@@ -38,13 +38,26 @@ DTB_IMAGE_SYMLINK_NAME ??= "${MACHINE}"
 DTB_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
 MODULE_TARBALL_BASE_NAME[vardepsexclude] += "DATETIME"
 
-# Create rsa-key if u-boot signature is enabled
-python do_create_keys() {
+FIT_IMAGE_GENKEY ?= "0"
+
+python () {
     if d.getVar("UBOOT_SIGN_ENABLE", True) != "1" or d.getVar("UBOOT_SIGN_KEYDIR", True):
         return
 
-    keydir = os.path.join(d.getVar("WORKDIR", True), "keys")
-    keysuf = os.path.join(keydir, "dev")
+    d.setVar("FIT_IMAGE_GENKEY", "1")
+
+    d.setVar("UBOOT_SIGN_KEYDIR", os.path.join(d.getVar("WORKDIR", True), "keys"))
+    if not d.getVar("UBOOT_SIGN_KEYNAME", True):
+        d.setVar("UBOOT_SIGN_KEYNAME", "dev")
+}
+
+# Create rsa-key if u-boot signature is enabled
+python do_create_keys() {
+    if d.getVar("FIT_IMAGE_GENKEY", True) != "1":
+        return
+
+    keydir = d.getVar("UBOOT_SIGN_KEYDIR", True)
+    keysuf = os.path.join(keydir, d.getVar("UBOOT_SIGN_KEYNAME", True))
     priv = keysuf + ".key"
     cert = keysuf + ".crt"
     pub = keysuf + ".pub"
@@ -59,7 +72,7 @@ python do_create_keys() {
     except bb.process.ExecutionError:
         bb.error("Failed to create rsa-keys")
 }
-addtask do_create_keys after do_compile before do_assemble_fitimage
+addtask do_create_keys after do_compile before do_assemble_fitimage do_assemble_fitimage_initramfs
 
 # Fix the deployed fitImage and DTB file names. We don't really need so
 # many files and links deployed. We'll create only unique and necessary minimum ones.
@@ -120,10 +133,10 @@ do_deploy_append() {
         fi
 
         # Deploy signature keys
-        if [ "${UBOOT_SIGN_ENABLE}" == "1" -a -z "${UBOOT_SIGN_KEYDIR}" ]; then
+        if [ "${FIT_IMAGE_GENKEY}" == "1" ]; then
             bbdebug 2 "Copying U-boot signature keys..."
 
-            keysuf="${WORKDIR}/keys/dev"
+            keysuf="${WORKDIR}/keys/${UBOOT_SIGN_KEYNAME}"
 
             install -m 0644 ${keysuf}.key ${DEPLOYDIR}/sign-${FIT_IMAGE_BASE_NAME}.key
             ln -sf sign-${FIT_IMAGE_BASE_NAME}.key ${DEPLOYDIR}/sign-${FIT_IMAGE_SYMLINK_NAME}.key
