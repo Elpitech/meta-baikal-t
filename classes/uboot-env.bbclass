@@ -62,7 +62,7 @@ UBOOT_ENV_SYMLINK_NAME ??= "u-boot-env-${MACHINE}"
 UBOOT_ENV_BASE_NAME[vardepsexclude] += "DATETIME"
 
 UBOOT_ENV_SIZE ??= "0x00010000"
-UBOOT_ENV_BUILD_IMAGE ??= "${MACHINE} (${DISTRO} ${DISTRO_VERSION}) boot ROM image"
+UBOOT_ENV_BUILD_IMAGE ??= "Yocto ${MACHINE} ${DISTRO} ${DISTRO_VERSION}"
 UBOOT_ENV_BUILD_VERSION ??= "0.1"
 UBOOT_ENV_CONSOLE ??= "ttyS0"
 UBOOT_ENV_BAUDRATE ??= "115200"
@@ -266,7 +266,7 @@ EOF
 #
 # Emit SATA/USB devices boot commands
 #
-# $1 ... .its filename
+# $1 ... .env filename
 # $2 ... name of the item
 # $3 ... sata/usb interface
 # $4 ... root device path
@@ -281,7 +281,7 @@ uboot_env_emit_dev_cmd() {
 
 	# Make sure the root device is valid
 	devp=$(echo ${4} | cut -c1-5)
-        devi=$(echo ${4} | cut -c1-6)
+	devi=$(echo ${4} | cut -c1-6)
 	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs" ]; then
 		bberror "Invalid kernel root device ${4} in boot item ${2}"
 		return 1
@@ -383,7 +383,7 @@ uboot_env_validate_ips() {
 #
 # Emit network TFTP/NFS boot commands
 #
-# $1 ... .its filename
+# $1 ... .env filename
 # $2 ... name of the item
 # $3 ... tftp/nfs interface
 # $4 ... root device path
@@ -399,7 +399,7 @@ uboot_env_emit_net_cmd() {
 
 	# Make sure the root device is valid
 	devp=$(echo ${4} | cut -c1-5)
-        devi=$(echo ${4} | cut -c1-6)
+	devi=$(echo ${4} | cut -c1-6)
 	if [ "${devp}" != "/dev/" -a "${devi}" != "initfs" ]; then
 		bberror "Invalid kernel root device ${4} in boot item ${2}"
 		return 1
@@ -516,7 +516,7 @@ EOF
 #
 # Emit reset U-boot commands
 #
-# $1 ... .its filename
+# $1 ... .env filename
 # $2 ... name of the item
 uboot_env_emit_reset_cmd() {
 	echo "boot_${2}=reset" >> ${1}
@@ -525,7 +525,7 @@ uboot_env_emit_reset_cmd() {
 #
 # Emit menu page selector command
 #
-# $1 ... .its filename
+# $1 ... .env filename
 # $2 ... name of the item
 # $3 ... page name
 uboot_env_emit_menu_cmd() {
@@ -535,6 +535,8 @@ uboot_env_emit_menu_cmd() {
 	fi
 
 	echo "boot_${2}=run menu_page_${3}" >> ${1}
+
+	return 0
 }
 
 #
