@@ -661,7 +661,7 @@ EOF
 #
 # $1 ... .env filename
 uboot_env_emit_extra() {
-	echo -ne "${UBOOT_ENV_EXTRA_VARS}" >> ${1}
+	printf "${UBOOT_ENV_EXTRA_VARS}\n" >> ${1}
 }
 
 #
