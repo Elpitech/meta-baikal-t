@@ -1,4 +1,4 @@
-KBRANCH ?= "linux-${@'rt-' if '${LINUX_KERNEL_TYPE}' == 'preempt-rt' else ''}${PV}.y-tp"
+KBRANCH ?= "linux-${PV}-tp"
 
 require recipes-kernel/linux/linux-yocto.inc
 require recipes-kernel/linux/linux-baikal.inc
