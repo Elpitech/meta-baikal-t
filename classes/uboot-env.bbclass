@@ -54,6 +54,7 @@
 # ${UBOOT_ENV_MENU_MAIN} - main menu items list
 # ${UBOOT_ENV_MENU_RCVR} - recovery menu items list
 # ${UBOOT_ENV_EXTRA_VARS} - extra variables printed to the env-file
+# ${UBOOT_ENV_EXTRA_ARGS} - extra args to the kernel
 
 DEPENDS_append = " u-boot-mkimage-native"
 
@@ -98,6 +99,7 @@ UBOOT_ENV_BOOTUNITS ??= "rec_ram=1. Boot recovery kernel and RFS;rom=initfs;; \
 UBOOT_ENV_MENU_MAIN ??= "rec_ram;;rec_sda1;;rec_sdb1;;reset"
 UBOOT_ENV_MENU_RCVR ??= ""
 UBOOT_ENV_EXTRA_VARS ??= ""
+UBOOT_ENV_EXTRA_ARGS ??= ""
 
 #
 # Emit the image build information
@@ -231,11 +233,9 @@ uboot_env_emit_boot_args() {
 	cat << EOF >> ${1}
 addroot=setenv bootargs \${bootargs} root=\${root_dev} rw rootwait
 addtty=setenv bootargs \${bootargs} console=\${console},\${baudrate}n8
-addhw=setenv bootargs \${bootargs} nohtw stmmaceth=chain_mode:1
-addmisc=setenv bootargs \${bootargs} earlyprintk=uart8250,mmio32,0x1F04A000,\${baudrate} maxcpus=\${num_cores}
-addfb=setenv bootargs \${bootargs} video=sma750fb:1600x900-16@60
-addkdb=setenv bootargs \${bootargs} kgdboc=\${console}
-collect_args=run addroot addtty addhw addmisc addfb addkdb
+addhw=setenv bootargs \${bootargs} nohtw maxcpus=\${num_cores}
+addmisc=setenv bootargs \${bootargs} earlyprintk=uart8250,mmio32,0x1F04A000,\${baudrate} ${UBOOT_ENV_EXTRA_ARGS}
+collect_args=run addroot addtty addhw addmisc
 start_static=bootnr \${kernel_addr_ld} \${initrd_addr_ld} \${fdt_addr_ld}
 start_multi=bootm \${multi_addr_fw}\${multi_conf}
 EOF
