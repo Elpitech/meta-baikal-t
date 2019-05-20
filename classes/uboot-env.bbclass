@@ -233,7 +233,7 @@ uboot_env_emit_boot_args() {
 	cat << EOF >> ${1}
 addroot=setenv bootargs \${bootargs} root=\${root_dev} rw rootwait
 addtty=setenv bootargs \${bootargs} console=\${console},\${baudrate}n8
-addhw=setenv bootargs \${bootargs} nohtw maxcpus=\${num_cores}
+addhw=setenv bootargs \${bootargs} nohtw ieee754=relaxed nocoherentio maxcpus=\${num_cores}
 addmisc=setenv bootargs \${bootargs} earlyprintk=uart8250,mmio32,0x1F04A000,\${baudrate} ${UBOOT_ENV_EXTRA_ARGS}
 collect_args=run addroot addtty addhw addmisc
 start_static=bootnr \${kernel_addr_ld} \${initrd_addr_ld} \${fdt_addr_ld}
