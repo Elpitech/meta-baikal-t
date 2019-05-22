@@ -16,9 +16,9 @@ EXTERNAL_KERNEL_SRC ?= ""
 EXTERNAL_UBOOT_SRC ?= ""
 
 # Default kernel code parameters
-LINUXLIBCVERSION ?= "4.4%"
 PREFERRED_VERSION_linux-yocto ?= "4.4%"
 PREFERRED_PROVIDER_virtual/kernel ?= "linux-yocto"
+LINUXLIBCVERSION ?= "${PREFERRED_VERSION_linux-yocto}"
 
 # Default u-boot code parameters
 PREFERRED_VERSION_u-boot ?= "2014.10"
