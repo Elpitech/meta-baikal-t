@@ -60,4 +60,6 @@ p5600_gcc_check_msa[eventmask] = "bb.event.ConfigParsed"
 addhandler p5600_gcc_check_msa
 
 # Add p5600-specific code tuning
-MIPS32R5_OECONF += "${@'--with-tune=p5600' if '${DEFAULTTUNE}' in ['p5600', 'p5600el', 'p5600-nf', 'p5600el-nf'] else ''}"
+MIPS32R5_OECONF += "${@'--with-abi=32 --with-arch=mips32r5 --with-tune=p5600' if '${DEFAULTTUNE}' in ['p5600', 'p5600el', 'p5600-nf', 'p5600el-nf'] else ''}"
+MIPS32R5_OECONF += "${@'--with-float=hard --with-fp-32=xx' if '${DEFAULTTUNE}' in ['p5600', 'p5600el'] else ''}"
+MIPS32R5_OECONF += "${@'--with-float=soft' if '${DEFAULTTUNE}' in ['p5600-nf', 'p5600el-nf'] else ''}"
