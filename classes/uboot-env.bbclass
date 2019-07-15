@@ -49,6 +49,7 @@
 #          or real IP-address in full form, srvip - server IP-address to load the data, gwip - gateway
 #          IP-address, mask - network mask, dnsip - DNS-server IP-address, dnsip2 - second DNS-server
 #          IP-address.
+# - fdt - FDT-name to select via bootmenu item.
 # - reset - just reset the CPU
 # - menu - select menu page (main or recovery)
 # ${UBOOT_ENV_MENU_MAIN} - main menu items list
@@ -523,6 +524,20 @@ uboot_env_emit_reset_cmd() {
 }
 
 #
+# Emit select-fdt command
+#
+# $1 ... .env filename
+# $2 ... name of the item
+# $3 ... fdt-name
+uboot_env_emit_fdt_cmd() {
+	cat << EOF >> ${1}
+setfdt_file_${2}=setenv fdt_file_name ${3##*/}
+setmulti_conf_${2}=setenv multi_conf \\\#conf@$(printf '%s' "${3}" | sed 's/\//_/')
+boot_${2}=run setfdt_file_${2} setmulti_conf_${2}; bootmenu -1
+EOF
+}
+
+#
 # Emit menu page selector command
 #
 # $1 ... .env filename
@@ -583,6 +598,9 @@ EOF
 			;;
 		tftp|nfs)
 			uboot_env_emit_net_cmd "${1}" "${itemname}" "${iface}" "${rootdev}" "${ifargs}"
+			;;
+		fdt)
+			uboot_env_emit_fdt_cmd "${1}" "${itemname}" "${rootdev}"
 			;;
 		menu)
 			uboot_env_emit_menu_cmd "${1}" "${itemname}" "${rootdev}"
