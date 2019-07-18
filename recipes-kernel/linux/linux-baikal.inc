@@ -12,6 +12,8 @@ DEPENDS += "openssl-native util-linux-native"
 LINUX_VERSION ?= "${PV}"
 KERNEL_VERSION_SANITY_SKIP = "1"
 
+LINUX_VERSION_EXTENSION ?= "-${MACHINE}"
+
 KCONFIG_MODE = "--alldefconfig"
 KMETA = "kernel-meta"
 KCONF_BSP_AUDIT_LEVEL = "2"
