@@ -315,6 +315,8 @@ uboot_env_emit_dev_cmd() {
 		fsop=ext4load
 	elif [ "${fs}" = "fat" ]; then
 		fsop=fatload
+	elif [ "${fs}" = "any" -o -z "${fs}" ]; then
+		fsop=load
 	else
 		bberror "Invalid filesystem ${fs} in boot item ${2}"
 		return 1
