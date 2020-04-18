@@ -33,6 +33,7 @@
 # ${UBOOT_ENV_ETHADDR} - ethernet address of the first interface
 # ${UBOOT_ENV_ETH1ADDR} - ethernet address of the second interface
 # ${UBOOT_ENV_ETH2ADDR - ethernet address of the third interface}
+# ${UBOOT_ENV_INITRD_HIGH} - initrd_high value - "no" for u-boot-2014 but "ffffffff" for 2019 version
 # ${UBOOT_ENV_MTDID} - flash-device name to assign the partitions listed in mtdparts
 # ${UBOOT_ENV_MTDPARTS} - list of mtd partitions available on SPI-boot flash
 # ${UBOOT_ENV_BOOTCMD} - default kernel boot command
@@ -85,6 +86,7 @@ UBOOT_ENV_FITIMAGE_VERIFY ??= "y"
 UBOOT_ENV_ETHADDR ??= "7a:72:6c:4a:7a:ee"
 UBOOT_ENV_ETH1ADDR ??= "7a:72:6c:4a:7b:ee"
 UBOOT_ENV_ETH2ADDR ??= "7a:72:6c:4a:7c:ee"
+UBOOT_ENV_INITRD_HIGH ??= "no"
 UBOOT_ENV_MTDID ??= "boot_flash"
 UBOOT_ENV_MTDPARTS ??= "bootloader;0x0;0x000E0000;ro;; \
 			environment;0x000E0000;0x00010000;; \
@@ -215,7 +217,7 @@ fdt_high=no
 fdt_len=0x00040000
 initrd_addr_ld=${UBOOT_ENV_INITRD_ADDR_LD}
 initrd_file_name=${UBOOT_ENV_INITRD_FILE_NAME}
-initrd_high=no
+initrd_high=${UBOOT_ENV_INITRD_HIGH}
 initrd_start=${UBOOT_ENV_INITRD_ADDR_LD}
 initrd_len=0x01000000
 multi_addr_fw=${UBOOT_ENV_FITIMAGE_ADDR_FW}
@@ -725,6 +727,10 @@ uboot_env_assemble() {
 
 	# Emit extra variables if ones defined in configs
 	uboot_env_emit_extra "${1}"
+
+	# Filter out variables that are set to empty values
+	grep -Ev '=$' ${1} > ${1}.tmp
+	mv ${1}.tmp ${1}
 
 	# Create U-boot environment binary
 	uboot-mkenvimage -s ${UBOOT_ENV_SIZE} -o ${2} ${1}
