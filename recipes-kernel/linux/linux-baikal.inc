@@ -2,9 +2,9 @@ SRCREV_machine ?= "AUTOINC"
 SRCREV_meta ?= "AUTOINC"
 
 EXTERNALSRC = "${EXTERNAL_KERNEL_SRC}"
-TPSDK_REPO ?= "gitlab.tpl"
+TPSDK_REPO ?= "github.com"
 
-SRC_URI = "git://${TPSDK_REPO}/core/kernel.git;protocol=ssh;user=git;name=machine;branch=${KBRANCH}; \
+SRC_URI = "git://${TPSDK_REPO}/Elpitech/baikal-t-linux-kernel.git;protocol=ssh;user=git;name=machine;branch=${KBRANCH}; \
            git://git.yoctoproject.org/yocto-kernel-cache;type=kmeta;name=meta;branch=yocto-${PV};destsuffix=${KMETA}"
 
 DEPENDS += "openssl-native util-linux-native"

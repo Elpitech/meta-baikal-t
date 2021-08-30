@@ -7,9 +7,9 @@ LIC_FILES_CHKSUM = "file://Licenses/README;md5=${@'c7383a594871c03da76b3707929d2
 
 KBRANCH = "u-boot-${PV}-tp"
 EXTERNALSRC = "${EXTERNAL_UBOOT_SRC}"
-TPSDK_REPO ?= "gitlab.tpl"
+TPSDK_REPO ?= "github.com"
 
-SRC_URI = "git://${TPSDK_REPO}/core/u-boot.git;protocol=ssh;user=git;branch=${KBRANCH}"
+SRC_URI = "git://${TPSDK_REPO}/Elpitech/baikal-t-u-boot.git;protocol=ssh;user=git;branch=${KBRANCH}"
 SRCREV = "AUTOINC"
 
 S = "${WORKDIR}/git"
