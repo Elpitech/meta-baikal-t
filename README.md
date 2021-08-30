@@ -44,10 +44,7 @@ issues for any bugs you find, or feature requests you have.
 
 ## Maintainer
 
-This layer is maintained by [T-platforms](https://www.t-platforms.ru/).
-Please direct all support requests for this layer to the GitHub repository
-issues interface. Optionally you can try to communicate with primary
-developer: Serge Semin <fancer.lancer@gmail.com>
+This layer is maintained by [Elpitech](https://www.elpitech.ru/).
 
 ## To Do List
 
