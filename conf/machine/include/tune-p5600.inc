@@ -10,24 +10,24 @@ TUNE_CCARGS .= "${@bb.utils.contains('TUNE_FEATURES', 'p5600', ' -march=mips32r5
 # Base Tunes (Hard Float)
 AVAILTUNES += "p5600 p5600el"
 
-TUNE_FEATURES_tune-p5600 = "${TUNE_FEATURES_tune-mips} p5600"
-MIPSPKGSFX_VARIANT_tune-p5600 = "p5600"
-PACKAGE_EXTRA_ARCHS_tune-p5600 = "mips mips32 mips32r2 mips32r5 p5600"
+TUNE_FEATURES:tune-p5600 = "${TUNE_FEATURES:tune-mips} p5600"
+MIPSPKGSFX_VARIANT:tune-p5600 = "p5600"
+PACKAGE_EXTRA_ARCHS:tune-p5600 = "mips mips32 mips32r2 mips32r5 p5600"
 
-TUNE_FEATURES_tune-p5600el = "${TUNE_FEATURES_tune-mipsel} p5600"
-MIPSPKGSFX_VARIANT_tune-p5600el = "p5600el"
-PACKAGE_EXTRA_ARCHS_tune-p5600el = "mipsel mips32el mips32r2el mips32r5el p5600el"
+TUNE_FEATURES:tune-p5600el = "${TUNE_FEATURES:tune-mipsel} p5600"
+MIPSPKGSFX_VARIANT:tune-p5600el = "p5600el"
+PACKAGE_EXTRA_ARCHS:tune-p5600el = "mipsel mips32el mips32r2el mips32r5el p5600el"
 
 # Soft Float
 AVAILTUNES += "p5600-nf p5600el-nf"
 
-TUNE_FEATURES_tune-p5600-nf = "${TUNE_FEATURES_tune-mips-nf} p5600"
-MIPSPKGSFX_VARIANT_tune-p5600-nf = "p5600"
-PACKAGE_EXTRA_ARCHS_tune-p5600-nf = "mips-nf mips32-nf mips32r2-nf mips32r5-nf p5600-nf"
+TUNE_FEATURES:tune-p5600-nf = "${TUNE_FEATURES:tune-mips-nf} p5600"
+MIPSPKGSFX_VARIANT:tune-p5600-nf = "p5600"
+PACKAGE_EXTRA_ARCHS:tune-p5600-nf = "mips-nf mips32-nf mips32r2-nf mips32r5-nf p5600-nf"
 
-TUNE_FEATURES_tune-p5600el-nf = "${TUNE_FEATURES_tune-mipsel-nf} p5600"
-MIPSPKGSFX_VARIANT_tune-p5600el-nf = "p5600el"
-PACKAGE_EXTRA_ARCHS_tune-p5600el-nf = "mipsel-nf mips32el-nf mips32r2el-nf mips32r5el-nf p5600el-nf"
+TUNE_FEATURES:tune-p5600el-nf = "${TUNE_FEATURES:tune-mipsel-nf} p5600"
+MIPSPKGSFX_VARIANT:tune-p5600el-nf = "p5600el"
+PACKAGE_EXTRA_ARCHS:tune-p5600el-nf = "mipsel-nf mips32el-nf mips32r2el-nf mips32r5el-nf p5600el-nf"
 
 # MIPS 64-bits floating point registers feature
 TUNEVALID[fp64] = "Use MIPS 64-bits FP registers"

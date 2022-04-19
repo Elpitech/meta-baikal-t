@@ -58,7 +58,7 @@
 # ${UBOOT_ENV_EXTRA_VARS} - extra variables printed to the env-file
 # ${UBOOT_ENV_EXTRA_ARGS} - extra args to the kernel
 
-DEPENDS_append = " u-boot-mkimage-native"
+DEPENDS:append = " u-boot-tools-native"
 
 UBOOT_ENV_BASE_NAME ??= "u-boot-env-${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 UBOOT_ENV_SYMLINK_NAME ??= "u-boot-env-${MACHINE}"
@@ -221,7 +221,7 @@ initrd_high=${UBOOT_ENV_INITRD_HIGH}
 initrd_start=${UBOOT_ENV_INITRD_ADDR_LD}
 initrd_len=0x01000000
 multi_addr_fw=${UBOOT_ENV_FITIMAGE_ADDR_FW}
-multi_conf=${@'#conf@${UBOOT_ENV_FITIMAGE_CONFIG}'.replace('/', '_') if '${UBOOT_ENV_FITIMAGE_CONFIG}' else ''}
+multi_conf=${@'#conf-${UBOOT_ENV_FITIMAGE_CONFIG}'.replace('/', '_') if '${UBOOT_ENV_FITIMAGE_CONFIG}' else ''}
 verify=${UBOOT_ENV_FITIMAGE_VERIFY}
 select_vmlinuz=echo Select vmlinuz.bin; setenv kernel_addr_ld \${vmlinuz_addr_ld}; setenv kernel_file_name \${vmlinuz_file_name}; setenv initrd_start \${initrd_addr_ld}
 select_vmlinux=echo Select vmlinux.bin; setenv kernel_addr_ld \${vmlinux_addr_ld}; setenv kernel_file_name \${vmlinux_file_name}; setenv initrd_start \${initrd_addr_ld}
@@ -536,7 +536,7 @@ uboot_env_emit_reset_cmd() {
 uboot_env_emit_fdt_cmd() {
 	cat << EOF >> ${1}
 setfdt_file_${2}=setenv fdt_file_name ${3##*/}
-setmulti_conf_${2}=setenv multi_conf \\\#conf@$(printf '%s' "${3}" | sed 's/\//_/')
+setmulti_conf_${2}=setenv multi_conf \\\#conf-$(printf '%s' "${3}" | sed 's/\//_/')
 boot_${2}=run setfdt_file_${2} setmulti_conf_${2}; bootmenu -1
 EOF
 }
@@ -742,7 +742,7 @@ do_assemble_uboot_env() {
 do_assemble_uboot_env[vardepsexclude] = "DATETIME DATE do_compile"
 addtask assemble_uboot_env after do_compile before do_install do_deploy
 
-do_install_append () {
+do_install:append () {
 	install -m 644 "${WORKDIR}/u-boot-env.txt" "${D}/boot/${UBOOT_ENV_BASE_NAME}.txt"
 	install -m 644 "${WORKDIR}/u-boot-env.bin" "${D}/boot/${UBOOT_ENV_BASE_NAME}.bin"
 	ln -sf "${UBOOT_ENV_BASE_NAME}.txt" "${D}/boot/${UBOOT_ENV_SYMLINK_NAME}.txt"
@@ -750,7 +750,7 @@ do_install_append () {
 }
 do_install[vardepsexclude] += "DATETIME"
 
-do_deploy_append() {
+do_deploy:append() {
 	install -d ${DEPLOYDIR}
 	install -m 644 "${WORKDIR}/u-boot-env.txt" "${DEPLOYDIR}/${UBOOT_ENV_BASE_NAME}.txt"
 	install -m 644 "${WORKDIR}/u-boot-env.bin" "${DEPLOYDIR}/${UBOOT_ENV_BASE_NAME}.bin"

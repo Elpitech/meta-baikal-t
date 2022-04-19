@@ -1,16 +1,22 @@
 HOMEPAGE = "http://www.denx.de/wiki/U-Boot/WebHome"
+DESCRIPTION = "U-Boot, a boot loader for Embedded boards based on PowerPC, \
+ARM, MIPS and several other processors, which can be installed in a boot \
+ROM and used to initialize and test the hardware or to download and run \
+application code."
 SECTION = "bootloaders"
+DEPENDS += "flex-native bison-native"
 
 LICENSE = "GPLv2+"
-LIC_FILES_CHKSUM = "file://Licenses/README;md5=${@'c7383a594871c03da76b3707929d2919' \
-	if '${PV}' == '2014.10' else '30503fd321432fc713238f582193b78e'}"
+LIC_FILES_CHKSUM = "file://Licenses/README;md5=5a7450c57ffe5ae63fd732446b988025"
+PE = "1"
 
-KBRANCH = "u-boot-${PV}-tp"
-EXTERNALSRC = "${EXTERNAL_UBOOT_SRC}"
-TPSDK_REPO ?= "gitlab.elp"
-
-SRC_URI = "git://${TPSDK_REPO}/baikal-t/u-boot.git;protocol=ssh;user=git;branch=${KBRANCH}"
 SRCREV = "AUTOINC"
+EXTERNALSRC = "${EXTERNAL_UBOOT_SRC}"
+
+TPSDK_REPO ?= "gitlab.elpitech.ru"
+KBRANCH = "v${PV}elp"
+SRC_URI = "git://${TPSDK_REPO}/baikal-t/u-boot.git;protocol=ssh;user=git;branch=${KBRANCH}"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
+do_configure[cleandirs] = "${B}"

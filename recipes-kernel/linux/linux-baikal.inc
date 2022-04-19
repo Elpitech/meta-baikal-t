@@ -2,10 +2,9 @@ SRCREV_machine ?= "AUTOINC"
 SRCREV_meta ?= "AUTOINC"
 
 EXTERNALSRC = "${EXTERNAL_KERNEL_SRC}"
-TPSDK_REPO ?= "gitlab.elp"
+TPSDK_REPO ?= "gitlab.elpitech.ru"
 
-SRC_URI = "git://${TPSDK_REPO}/baikal-t/kernel.git;protocol=ssh;user=git;name=machine;branch=${KBRANCH}; \
-           git://git.yoctoproject.org/yocto-kernel-cache;type=kmeta;name=meta;branch=yocto-${PV};destsuffix=${KMETA}"
+SRC_URI = "git://${TPSDK_REPO}/baikal-t/kernel.git;protocol=ssh;user=git;name=machine;branch=${KBRANCH}"
 
 DEPENDS += "openssl-native util-linux-native"
 
@@ -22,16 +21,18 @@ COMPATIBLE_MACHINE = "baikal|qemumips|qemumips64"
 
 # Functionality flags
 KERNEL_EXTRA_FEATURES ?= ""
-KERNEL_FEATURES_append = " ${KERNEL_EXTRA_FEATURES}"
+KERNEL_FEATURES:append = " ${KERNEL_EXTRA_FEATURES}"
 
 # Customized kernel names
-FIT_IMAGE_BASE_NAME ??= "${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
+FIT_IMAGE_BASE_NAME ??= "${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 FIT_IMAGE_SYMLINK_NAME ??= "${MACHINE}"
 FIT_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
-DTB_IMAGE_BASE_NAME ??= "${PKGE}-${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
+DTB_IMAGE_BASE_NAME ??= "${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
 DTB_IMAGE_SYMLINK_NAME ??= "${MACHINE}"
 DTB_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
 MODULE_TARBALL_BASE_NAME[vardepsexclude] += "DATETIME"
+KERNEL_IMAGE_BASE_NAME ??= "${PKGV}-${PKGR}-${MACHINE}-${DATETIME}"
+KERNEL_IMAGE_BASE_NAME[vardepsexclude] += "DATETIME"
 
 FIT_IMAGE_GENKEY ?= "0"
 
@@ -71,7 +72,7 @@ addtask do_create_keys after do_compile before do_assemble_fitimage do_assemble_
 
 # Fix the deployed fitImage and DTB file names. We don't really need so
 # many files and links deployed. We'll create only unique and necessary minimum ones.
-do_deploy_append() {
+do_deploy:append() {
     # Remove kernel image symlinks and replace non-fitImages with proper one
     for type in ${KERNEL_IMAGETYPES} ; do
 
@@ -79,7 +80,7 @@ do_deploy_append() {
         rm -f ${DEPLOYDIR}/${type}
         rm -f ${DEPLOYDIR}/${type}-${KERNEL_IMAGE_SYMLINK_NAME}.bin
 
-        if [ ${type} == "fitImage" ]; then
+        if [ ${type} = "fitImage" ]; then
             continue
         fi
 
@@ -93,7 +94,7 @@ do_deploy_append() {
         fi
 
         bbdebug 2 "Copying ${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext} source files..."
-        mv ${DEPLOYDIR}/${type}-${KERNEL_IMAGE_BASE_NAME}.bin ${DEPLOYDIR}/${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext}
+        mv ${DEPLOYDIR}/${type}--${KERNEL_IMAGE_BASE_NAME}.bin ${DEPLOYDIR}/${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext}
         ln -sf ${typeextless}-${KERNEL_IMAGE_BASE_NAME}${ext} ${DEPLOYDIR}/${typeextless}-${KERNEL_IMAGE_SYMLINK_NAME}${ext}
     done
 

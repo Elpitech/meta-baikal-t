@@ -328,7 +328,7 @@
 # show an example of how it can be done
 # You'll also need your fortran recipe to depend on libgfortran
 #FORTRAN_forcevariable = ",fortran"
-#RUNTIMETARGET_append_pn-gcc-runtime = " libquadmath"
+#RUNTIMETARGET:append:pn-gcc-runtime = " libquadmath"
 
 #
 # Kernel image features
@@ -388,7 +388,7 @@
 #
 # Use systemd for system initialization
 #
-#DISTRO_FEATURES_append = " systemd"
+#DISTRO_FEATURES:append = " systemd"
 #DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
 #VIRTUAL-RUNTIME_init_manager = "systemd"
 #VIRTUAL-RUNTIME_initscripts = "systemd-compat-units"
